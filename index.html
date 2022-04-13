@@ -39,14 +39,3 @@ DBA로서 더더욱 성장하기 위한, 개인적인 학습 기록을 정리해
       </a>
   </p></span>
 </div>
-
-explain
-select *
-from raw_ha._media_total_sem_2022_test as a 
-left join raw_ha._site_total_sem_2022 as b
-on a.date = b.date
-and a.trackingcode = b.trackingcode
-where a.Date between '2022-03-31' and '2022-04-11';
-
-create index _site_total_sem_2022_date_trackingcode_index
-    on _site_total_sem_2022 (date, trackingcode);
