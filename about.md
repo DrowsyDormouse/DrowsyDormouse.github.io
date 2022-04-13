@@ -21,12 +21,11 @@ Database Administration
 
 
 ### Interest
-<img src ="https://img.shields.io/badge/MySQL-4479A1?style=plastic&logo=MySQL&logoColor=white" />  
-
-<img src ="https://img.shields.io/badge/Node.js-339933?style=plastic&logo=Node.js&logoColor=white" />  
-<img src ="https://img.shields.io/badge/PHP-777BB4?style=plastic&logo=PHP&logoColor=white" />  
-<img src ="https://img.shields.io/badge/Python-3776AB?style=plastic&logo=Python&logoColor=white" />  
-
+<img src ="https://img.shields.io/badge/MySQL-4479A1?style=plastic&logo=MySQL&logoColor=white" />
+<img src ="https://img.shields.io/badge/Node.js-339933?style=plastic&logo=Node.js&logoColor=white" />
+<img src ="https://img.shields.io/badge/PHP-777BB4?style=plastic&logo=PHP&logoColor=white" />
+<img src ="https://img.shields.io/badge/Python-3776AB?style=plastic&logo=Python&logoColor=white" />
+  
 Google Cloud Platform (BigQuery, Firebase)  
 
 
