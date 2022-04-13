@@ -3,7 +3,7 @@ layout: post
 title: log 테이블의 파티션 관리 프로시저에 대해
 ---
 
-# Purpose of Study
+## Purpose of Study
 MySQL 파티션 시스템을 편리하게 관리하는 프로시저를 학습하고 만들어보고자 하였습니다.   
 로그 파티션 관리 테이블의 값에 따라, 테이블마다 설정된 기간으로 파티션을 생성하고 추가하는 프로시저를 만들고자 하였습니다.  
 
@@ -35,7 +35,7 @@ MySQL 파티션 시스템을 편리하게 관리하는 프로시저를 학습하
 <br/>
 
 
-# log 테이블의 파티션 관리 프로시저에 대해
+## log 테이블의 파티션 관리 프로시저에 대해
  - [Purpose of Study](#purpose-of-study)
 
 <br/>
@@ -46,5 +46,3 @@ MySQL 파티션 시스템을 편리하게 관리하는 프로시저를 학습하
  - [[MySQL] 사용자 로그 테이블 - (1) Primary Key가 필요한가?](https://purumae.tistory.com/209?category=652830)
  - [[MySQL] 사용자 로그 테이블 - (2) 파티션 관리](https://purumae.tistory.com/210?category=652830)
  - [[MySQL] 사용자 로그 테이블 - (3) 자동화된 파티션 관리](https://purumae.tistory.com/211?category=652830)
-
-뭐야 잔디 어디감 
