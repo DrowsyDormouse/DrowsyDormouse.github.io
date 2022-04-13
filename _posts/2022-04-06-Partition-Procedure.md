@@ -46,3 +46,6 @@ MySQL 파티션 시스템을 편리하게 관리하는 프로시저를 학습하
  - [[MySQL] 사용자 로그 테이블 - (1) Primary Key가 필요한가?](https://purumae.tistory.com/209?category=652830)
  - [[MySQL] 사용자 로그 테이블 - (2) 파티션 관리](https://purumae.tistory.com/210?category=652830)
  - [[MySQL] 사용자 로그 테이블 - (3) 자동화된 파티션 관리](https://purumae.tistory.com/211?category=652830)
+
+<br/>
+
