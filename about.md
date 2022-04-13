@@ -5,7 +5,8 @@ permalink: /about/
 ---
 ![](./images/my_profile.png)  
   
-Database Administration
+Sehee Song 1995.11.01  
+Database Administration  
 
 ### Who Am I?
  - Github : [https://github.com/DrowsyDormouse](https://github.com/DrowsyDormouse)
