@@ -1,0 +1,275 @@
+centos 6 사용이 익숙치 않은 사용자를 위한 설명
+ - exporter 항목들은 /usr/init.d/ 안에 생성해줄 것
+  -> /etc/init.d 일수도
+ - chmod 755 파일명 해주기
+ - etc/sysconfig/ 아래에는 설정 파일들 생성해둘 것. 
+ - 로그 파일은 자동 생성 됨
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### mysql exporter 에서 사용 가능한 Flags ###
+### /etc/sysconfig/mysqld_exporter 에 사용할 Flag 값을 Setting 할 것 ###
+### mysql exporter flag.xlsx 문서 확인해볼 것 ###
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Flags:
+  -h, --help                   Show context-sensitive help (also try --help-long and --help-man).
+      --exporter.lock_wait_timeout=2
+                               Set a lock_wait_timeout (in seconds) on the connection to avoid long metadata locking.
+      --exporter.log_slow_filter
+                               Add a log_slow_filter to avoid slow query logging of scrapes. NOTE: Not supported by Oracle MySQL.
+      --collect.heartbeat.database="heartbeat"
+                               Database from where to collect heartbeat data
+      --collect.heartbeat.table="heartbeat"
+                               Table from where to collect heartbeat data
+      --collect.heartbeat.utc  Use UTC for timestamps of the current server (`pt-heartbeat` is called with `--utc`)
+      --collect.info_schema.processlist.min_time=0
+                               Minimum time a thread must be in each state to be counted
+      --collect.info_schema.processlist.processes_by_user
+                               Enable collecting the number of processes by user
+      --collect.info_schema.processlist.processes_by_host
+                               Enable collecting the number of processes by host
+      --collect.info_schema.tables.databases="*"
+                               The list of databases to collect table stats for, or '*' for all
+      --collect.mysql.user.privileges
+                               Enable collecting user privileges from mysql.user
+      --collect.perf_schema.eventsstatements.limit=250
+                               Limit the number of events statements digests by response time
+      --collect.perf_schema.eventsstatements.timelimit=86400
+                               Limit how old the 'last_seen' events statements can be, in seconds
+      --collect.perf_schema.eventsstatements.digest_text_limit=120
+                               Maximum length of the normalized statement text
+      --collect.perf_schema.file_instances.filter=".*"
+                               RegEx file_name filter for performance_schema.file_summary_by_instance
+      --collect.perf_schema.file_instances.remove_prefix="/var/lib/mysql/"
+                               Remove path prefix in performance_schema.file_summary_by_instance
+      --collect.perf_schema.memory_events.remove_prefix="memory/"
+                               Remove instrument prefix in performance_schema.memory_summary_global_by_event_name
+      --web.config.file=""     [EXPERIMENTAL] Path to configuration file that can enable TLS or authentication.
+      --web.listen-address=":9104"
+                               Address to listen on for web interface and telemetry.
+      --web.telemetry-path="/metrics"
+                               Path under which to expose metrics.
+      --timeout-offset=0.25    Offset to subtract from timeout in seconds.
+      --config.my-cnf="/root/.my.cnf"
+                               Path to .my.cnf file to read MySQL credentials from.
+      --tls.insecure-skip-verify
+                               Ignore certificate and server verification when using a tls connection.
+      --collect.info_schema.innodb_tablespaces
+                               Collect metrics from information_schema.innodb_sys_tablespaces
+      --collect.info_schema.innodb_metrics
+                               Collect metrics from information_schema.innodb_metrics
+      --collect.global_status  Collect from SHOW GLOBAL STATUS
+      --collect.global_variables
+                               Collect from SHOW GLOBAL VARIABLES
+      --collect.slave_status   Collect from SHOW SLAVE STATUS
+      --collect.info_schema.processlist
+                               Collect current thread state counts from the information_schema.processlist
+      --collect.mysql.user     Collect data from mysql.user
+      --collect.info_schema.tables
+                               Collect metrics from information_schema.tables
+      --collect.perf_schema.eventsstatementssum
+                               Collect metrics of grand sums from performance_schema.events_statements_summary_by_digest
+      --collect.perf_schema.eventswaits
+                               Collect metrics from performance_schema.events_waits_summary_global_by_event_name
+      --collect.auto_increment.columns
+                               Collect auto_increment columns and max values from information_schema
+      --collect.binlog_size    Collect the current size of all registered binlog files
+      --collect.perf_schema.tableiowaits
+                               Collect metrics from performance_schema.table_io_waits_summary_by_table
+      --collect.perf_schema.indexiowaits
+                               Collect metrics from performance_schema.table_io_waits_summary_by_index_usage
+      --collect.perf_schema.tablelocks
+                               Collect metrics from performance_schema.table_lock_waits_summary_by_table
+      --collect.perf_schema.eventsstatements
+                               Collect metrics from performance_schema.events_statements_summary_by_digest
+      --collect.info_schema.userstats
+                               If running with userstat=1, set to true to collect user statistics
+      --collect.info_schema.clientstats
+                               If running with userstat=1, set to true to collect client statistics
+      --collect.perf_schema.file_events
+                               Collect metrics from performance_schema.file_summary_by_event_name
+      --collect.perf_schema.file_instances
+                               Collect metrics from performance_schema.file_summary_by_instance
+      --collect.perf_schema.memory_events
+                               Collect metrics from performance_schema.memory_summary_global_by_event_name
+      --collect.perf_schema.replication_group_members
+                               Collect metrics from performance_schema.replication_group_members
+      --collect.perf_schema.replication_group_member_stats
+                               Collect metrics from performance_schema.replication_group_member_stats
+      --collect.perf_schema.replication_applier_status_by_worker
+                               Collect metrics from performance_schema.replication_applier_status_by_worker
+      --collect.engine_innodb_status
+                               Collect from SHOW ENGINE INNODB STATUS
+      --collect.heartbeat      Collect from heartbeat
+      --collect.info_schema.tablestats
+                               If running with userstat=1, set to true to collect table statistics
+      --collect.info_schema.schemastats
+                               If running with userstat=1, set to true to collect schema statistics
+      --collect.info_schema.innodb_cmp
+                               Collect metrics from information_schema.innodb_cmp
+      --collect.info_schema.innodb_cmpmem
+                               Collect metrics from information_schema.innodb_cmpmem
+      --collect.info_schema.query_response_time
+                               Collect query response time distribution if query_response_time_stats is ON.
+      --collect.engine_tokudb_status
+                               Collect from SHOW ENGINE TOKUDB STATUS
+      --collect.slave_hosts    Scrape information from 'SHOW SLAVE HOSTS'
+      --collect.info_schema.replica_host
+                               Collect metrics from information_schema.replica_host_status
+      --log.level=info         Only log messages with the given severity or above. One of: [debug, info, warn, error]
+      --log.format=logfmt      Output format of log messages. One of: [logfmt, json]
+      --version                Show application version.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+### node exporter 에서 사용 가능한 Flags ###
+### /etc/sysconfig/node_exporter 에 사용할 Flag 값을 Setting 할 것 ###
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Flags:
+  -h, --help                     Show context-sensitive help (also try --help-long and --help-man).
+      --collector.bcache.priorityStats
+                                 Expose expensive priority stats.
+      --collector.cpu.info       Enables metric cpu_info
+      --collector.cpu.info.flags-include=COLLECTOR.CPU.INFO.FLAGS-INCLUDE
+                                 Filter the `flags` field in cpuInfo with a value that must be a regular expression
+      --collector.cpu.info.bugs-include=COLLECTOR.CPU.INFO.BUGS-INCLUDE
+                                 Filter the `bugs` field in cpuInfo with a value that must be a regular expression
+      --collector.diskstats.ignored-devices="^(ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\\d+n\\d+p)\\d+$"
+                                 Regexp of devices to ignore for diskstats.
+      --collector.filesystem.mount-points-exclude="^/(dev|proc|sys|var/lib/docker/.+)($|/)"
+                                 Regexp of mount points to exclude for filesystem collector.
+      --collector.filesystem.fs-types-exclude="^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$"
+                                 Regexp of filesystem types to exclude for filesystem collector.
+      --collector.ipvs.backend-labels="local_address,local_port,remote_address,remote_port,proto,local_mark"
+                                 Comma separated list for IPVS backend stats labels.
+      --collector.netclass.ignored-devices="^$"
+                                 Regexp of net devices to ignore for netclass collector.
+      --collector.netclass.ignore-invalid-speed
+                                 Ignore devices where the speed is invalid. This will be the default behavior in 2.x.
+      --collector.netdev.device-include=COLLECTOR.NETDEV.DEVICE-INCLUDE
+                                 Regexp of net devices to include (mutually exclusive to device-exclude).
+      --collector.netdev.device-exclude=COLLECTOR.NETDEV.DEVICE-EXCLUDE
+                                 Regexp of net devices to exclude (mutually exclusive to device-include).
+      --collector.netstat.fields="^(.*_(InErrors|InErrs)|Ip_Forwarding|Ip(6|Ext)_(InOctets|OutOctets)|Icmp6?_(InMsgs|OutMsgs)|TcpExt_(Listen.*|Syncookies.*|TCPSynRetrans)|Tcp_(ActiveOpens|InSegs|OutSegs|OutRsts|PassiveOpens|RetransSegs|CurrEstab)|Udp6?_(InDatagrams|OutDatagrams|NoPorts|RcvbufErrors|SndbufErrors))$"
+                                 Regexp of fields to return for netstat collector.
+      --collector.ntp.server="127.0.0.1"
+                                 NTP server to use for ntp collector
+      --collector.ntp.protocol-version=4
+                                 NTP protocol version
+      --collector.ntp.server-is-local
+                                 Certify that collector.ntp.server address is not a public ntp server
+      --collector.ntp.ip-ttl=1   IP TTL to use while sending NTP query
+      --collector.ntp.max-distance=3.46608s
+                                 Max accumulated distance to the root
+      --collector.ntp.local-offset-tolerance=1ms
+                                 Offset between local clock and local ntpd time to tolerate
+      --path.procfs="/proc"      procfs mountpoint.
+      --path.sysfs="/sys"        sysfs mountpoint.
+      --path.rootfs="/"          rootfs mountpoint.
+      --collector.perf.cpus=""   List of CPUs from which perf metrics should be collected
+      --collector.perf.tracepoint=COLLECTOR.PERF.TRACEPOINT ...
+                                 perf tracepoint that should be collected
+      --collector.powersupply.ignored-supplies="^$"
+                                 Regexp of power supplies to ignore for powersupplyclass collector.
+      --collector.qdisc.fixtures=""
+                                 test fixtures to use for qdisc collector end-to-end testing
+      --collector.runit.servicedir="/etc/service"
+                                 Path to runit service directory.
+      --collector.supervisord.url="http://localhost:9001/RPC2"
+                                 XML RPC endpoint.
+      --collector.systemd.unit-include=".+"
+                                 Regexp of systemd units to include. Units must both match include and not match exclude to be included.
+      --collector.systemd.unit-exclude=".+\\.(automount|device|mount|scope|slice)"
+                                 Regexp of systemd units to exclude. Units must both match include and not match exclude to be included.
+      --collector.systemd.enable-task-metrics
+                                 Enables service unit tasks metrics unit_tasks_current and unit_tasks_max
+      --collector.systemd.enable-restarts-metrics
+                                 Enables service unit metric service_restart_total
+      --collector.systemd.enable-start-time-metrics
+                                 Enables service unit metric unit_start_time_seconds
+      --collector.tapestats.ignored-devices="^$"
+                                 Regexp of devices to ignore for tapestats.
+      --collector.textfile.directory=""
+                                 Directory to read text files with metrics from.
+      --collector.vmstat.fields="^(oom_kill|pgpg|pswp|pg.*fault).*"
+                                 Regexp of fields to return for vmstat collector.
+      --collector.wifi.fixtures=""
+                                 test fixtures to use for wifi collector metrics
+      --collector.arp            Enable the arp collector (default: enabled).
+      --collector.bcache         Enable the bcache collector (default: enabled).
+      --collector.bonding        Enable the bonding collector (default: enabled).
+      --collector.btrfs          Enable the btrfs collector (default: enabled).
+      --collector.buddyinfo      Enable the buddyinfo collector (default: disabled).
+      --collector.conntrack      Enable the conntrack collector (default: enabled).
+      --collector.cpu            Enable the cpu collector (default: enabled).
+      --collector.cpufreq        Enable the cpufreq collector (default: enabled).
+      --collector.diskstats      Enable the diskstats collector (default: enabled).
+      --collector.drbd           Enable the drbd collector (default: disabled).
+      --collector.edac           Enable the edac collector (default: enabled).
+      --collector.entropy        Enable the entropy collector (default: enabled).
+      --collector.ethtool        Enable the ethtool collector (default: disabled).
+      --collector.fibrechannel   Enable the fibrechannel collector (default: enabled).
+      --collector.filefd         Enable the filefd collector (default: enabled).
+      --collector.filesystem     Enable the filesystem collector (default: enabled).
+      --collector.hwmon          Enable the hwmon collector (default: enabled).
+      --collector.infiniband     Enable the infiniband collector (default: enabled).
+      --collector.interrupts     Enable the interrupts collector (default: disabled).
+      --collector.ipvs           Enable the ipvs collector (default: enabled).
+      --collector.ksmd           Enable the ksmd collector (default: disabled).
+      --collector.loadavg        Enable the loadavg collector (default: enabled).
+      --collector.logind         Enable the logind collector (default: disabled).
+      --collector.mdadm          Enable the mdadm collector (default: enabled).
+      --collector.meminfo        Enable the meminfo collector (default: enabled).
+      --collector.meminfo_numa   Enable the meminfo_numa collector (default: disabled).
+      --collector.mountstats     Enable the mountstats collector (default: disabled).
+      --collector.netclass       Enable the netclass collector (default: enabled).
+      --collector.netdev         Enable the netdev collector (default: enabled).
+      --collector.netstat        Enable the netstat collector (default: enabled).
+      --collector.network_route  Enable the network_route collector (default: disabled).
+      --collector.nfs            Enable the nfs collector (default: enabled).
+      --collector.nfsd           Enable the nfsd collector (default: enabled).
+      --collector.ntp            Enable the ntp collector (default: disabled).
+      --collector.nvme           Enable the nvme collector (default: enabled).
+      --collector.perf           Enable the perf collector (default: disabled).
+      --collector.powersupplyclass
+                                 Enable the powersupplyclass collector (default: enabled).
+      --collector.pressure       Enable the pressure collector (default: enabled).
+      --collector.processes      Enable the processes collector (default: disabled).
+      --collector.qdisc          Enable the qdisc collector (default: disabled).
+      --collector.rapl           Enable the rapl collector (default: enabled).
+      --collector.runit          Enable the runit collector (default: disabled).
+      --collector.schedstat      Enable the schedstat collector (default: enabled).
+      --collector.sockstat       Enable the sockstat collector (default: enabled).
+      --collector.softnet        Enable the softnet collector (default: enabled).
+      --collector.stat           Enable the stat collector (default: enabled).
+      --collector.supervisord    Enable the supervisord collector (default: disabled).
+      --collector.systemd        Enable the systemd collector (default: disabled).
+      --collector.tapestats      Enable the tapestats collector (default: enabled).
+      --collector.tcpstat        Enable the tcpstat collector (default: disabled).
+      --collector.textfile       Enable the textfile collector (default: enabled).
+      --collector.thermal_zone   Enable the thermal_zone collector (default: enabled).
+      --collector.time           Enable the time collector (default: enabled).
+      --collector.timex          Enable the timex collector (default: enabled).
+      --collector.udp_queues     Enable the udp_queues collector (default: enabled).
+      --collector.uname          Enable the uname collector (default: enabled).
+      --collector.vmstat         Enable the vmstat collector (default: enabled).
+      --collector.wifi           Enable the wifi collector (default: disabled).
+      --collector.xfs            Enable the xfs collector (default: enabled).
+      --collector.zfs            Enable the zfs collector (default: enabled).
+      --collector.zoneinfo       Enable the zoneinfo collector (default: disabled).
+      --web.listen-address=":9100"
+                                 Address on which to expose metrics and web interface.
+      --web.telemetry-path="/metrics"
+                                 Path under which to expose metrics.
+      --web.disable-exporter-metrics
+                                 Exclude metrics about the exporter itself (promhttp_*, process_*, go_*).
+      --web.max-requests=40      Maximum number of parallel scrape requests. Use 0 to disable.
+      --collector.disable-defaults
+                                 Set all collectors to disabled by default.
+      --web.config=""            [EXPERIMENTAL] Path to config yaml file that can enable TLS or authentication.
+      --log.level=info           Only log messages with the given severity or above. One of: [debug, info, warn, error]
+      --log.format=logfmt        Output format of log messages. One of: [logfmt, json]
+      --version                  Show application version.
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------

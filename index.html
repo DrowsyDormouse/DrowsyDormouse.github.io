@@ -1,0 +1,52 @@
+---
+layout: default
+---
+
+<!-- ![](./images/wandering_period_main.jpg) -->
+<img src="./images/wandering_period_main.jpg">
+
+DBA로서 더더욱 성장하기 위한, 개인적인 학습 기록을 정리해놓은 저장소입니다. 이전까지 주로 노트패드, 구글 Blogger, 등으로 정리하고 있었으나 관리의 불편함을 느끼고 git으로 이전중입니다. 
+개인적으로 학습하며 정리한 내용이라 잘못된 부분이 있을 수 있습니다. 이런 부분에 대해선 알려주시면 정말 감사드리겠습니다. 
+<br/>
+현재 이전 작업 중...(30%)    
+<br/>
+<br/>
+<div style="padding:0.1em; background-color:#F1F0EC;">
+  <span>
+  <H1>
+  <p style="margin-top:1em; margin-left:1em; text-align:left;color:#6667AB;">
+      <b>Content</b>
+  </p>
+  </H1>
+  <p style="margin-left:3em; letter-spacing: 0.1em;">
+      <a href="https://drowsydormouse.github.io/Grafana-Prometheus/">
+          1. grafana 와 prometheus를 활용한 mysql 모니터링
+      </a>
+  </p>
+  <p style="margin-left:3em; letter-spacing: 0.1em;">
+      <a href="https://drowsydormouse.github.io/Partition-Procedure/">
+          2. log 테이블의 파티션을 좀더 편하게 관리할 프로시저에 대해
+      </a>
+  </p>
+  <p style="margin-left:3em; letter-spacing: 0.1em;">
+      <a href="https://github.com/DrowsyDormouse/Wandering_Period_for_Learing/blob/main/XtraBackup/README.md">
+          3. XtraBackup에 대해서
+      </a>
+  </p>
+  <p style="margin-left:3em; letter-spacing: 0.1em;">
+      <a href="https://github.com/DrowsyDormouse/Wandering_Period_for_Learing/blob/main/MHA/README.md">
+          4. 우당탕쿵탕 MHA 학습기
+      </a>
+  </p></span>
+</div>
+
+explain
+select *
+from raw_ha._media_total_sem_2022_test as a 
+left join raw_ha._site_total_sem_2022 as b
+on a.date = b.date
+and a.trackingcode = b.trackingcode
+where a.Date between '2022-03-31' and '2022-04-11';
+
+create index _site_total_sem_2022_date_trackingcode_index
+    on _site_total_sem_2022 (date, trackingcode);

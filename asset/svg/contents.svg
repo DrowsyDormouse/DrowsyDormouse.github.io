@@ -1,0 +1,42 @@
+<svg fill="none" viewBox="0 0 1000 1000" width="1000" height="1000" xmlns="http://www.w3.org/2000/svg">
+    <foreignObject width="100%" height="100%">
+        <div xmlns="http://www.w3.org/1999/xhtml">
+            <style>
+            .content {
+                padding:0.1em; 
+                background-color:#F1F0EC; 
+                color:#6667AB;
+            }
+            .header {
+                font-size: 2em;
+                margin-top:1em;
+                margin-left:1em; 
+                text-align:left
+            }
+            </style>
+            <div class="content">
+                <span>
+                <p class="header">
+                    <b>Content</b>
+                </p>
+                <p style='margin-left:3em; letter-spacing: 0.1em'>
+                <p><a href="https://github.com/DrowsyDormouse/Wandering_Period_for_Learing/blob/main/Grafana%20%2B%20Prometheus/README.md">
+                    1. grafana 와 prometheus를 활용한 mysql 모니터링
+                </a></p>
+                <p>
+                <a href="https://github.com/DrowsyDormouse/Wandering_Period_for_Learing/blob/main/Partition%20Procedure/README.md">
+                    2. log 테이블의 파티션을 좀더 편하게 관리할 프로시저에 대해
+                </a></p>
+                <p>
+                <a href="https://github.com/DrowsyDormouse/Wandering_Period_for_Learing/blob/main/XtraBackup/README.md">
+                    3. XtraBackup에 대해서
+                </a></p>
+                <p>
+                <a href="https://github.com/DrowsyDormouse/Wandering_Period_for_Learing/blob/main/MHA/README.md">
+                    4. 우당탕쿵탕 MHA 학습기
+                </a></p>
+                </p></span>
+            </div>
+        </div>
+    </foreignObject>
+</svg>

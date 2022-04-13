@@ -1,0 +1,12 @@
+--config.my-cnf /usr/local/bin/mysqld_exporter/mysqld_exporter.cnf
+--collect.global_status
+--collect.global_variables
+--collect.info_schema.clientstats
+--collect.info_schema.processlist
+--collect.info_schema.processlist.min_time=0
+--collect.info_schema.query_response_time
+--collect.info_schema.tables
+--collect.info_schema.tables.databases="*"
+--collect.slave_status
+--collect.slave_hosts
+--web.listen-address=0.0.0.0:9104
