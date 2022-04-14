@@ -16,6 +16,9 @@
         height: 100%;
         float: right;
       }
+      #wrapper-masthead{
+        width: 100%;
+      }
 
     </style>
 
@@ -50,7 +53,23 @@
 
     <div>
       <div id="div_side_nav">
-        <p>음...</p>
+        <ul>
+          {% for category in site.categories %}
+          <h2 id="{{category | first}}">{{category | first}}</h2>
+          {% for posts in category %}
+          {% for post in posts %}
+          {% if post.url %}
+          <li>
+            <time>
+              {{ post.date | date:"%F" }} {{ post.date | date: "%a" }}.
+            </time>
+            <a class="title" href="{{ post.url | prepend: site.url }}">{{ post.title }}</a>
+          </li>
+          {% endif %}
+          {% endfor %}
+          {% endfor %}
+          {% endfor %}
+        </ul>
       </div>
       <div id="main" role="main" class="container">
         {{ content }}
