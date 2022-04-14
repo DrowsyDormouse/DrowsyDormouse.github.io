@@ -52,7 +52,7 @@
     </div>
 
     <div>
-      <div id="div_side_nav">Category</div>
+      <div id="div_side_nav">Category
         <nav class="content-ul">
           {% for category in site.categories %}
           <a href="{{ root_url }}/{{ site.category_dir }}#{{ category | first }}"
@@ -64,6 +64,7 @@
           </a>
           {% endfor %}
         </nav>
+        <br/>
         <div class="tags-cloud">
           <div>
             {% assign first = site.tags.first %}
@@ -102,6 +103,7 @@
             <a href="{{ root_url }}/{{ site.tag_dir }}#{{ tag[0] }}" style="font-size: {{ size }}pt; color: #{{ 9 | minus: color }}{{ 9 | minus: color }}{{ 9 | minus: color }};">{{ tag[0] }}</a>
             {% endfor %}
           </div>
+      </div>
       </div>
       <div id="main" role="main" class="container">
         {{ content }}
