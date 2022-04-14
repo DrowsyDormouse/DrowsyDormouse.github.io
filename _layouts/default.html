@@ -19,9 +19,6 @@
       #wrapper-masthead{
         width: 100%;
       }
-      .tags-cloud {
-        margin-top: 20px;
-      }
 
     </style>
 
@@ -59,16 +56,15 @@
         <nav class="content-ul">
           {% for category in site.categories %}
           <a href="{{ root_url }}/{{ site.category_dir }}#{{ category | first }}"
-            class="sidebar-nav-item pl-3rem", style="border-bottom: solid 1px;">
-                                <span class="category_name">
+            class="sidebar-nav-item pl-3rem" style="border-bottom: solid 1px; width: 100%;">
+                                <span class="category_name" style="float: left;">
                                     {{ category | first }}
                                 </span>
             <span class="badge" style="float: right;">{{ category | last | size }}</span>
           </a>
           {% endfor %}
         </nav>
-        <br/>
-        <div class="tags-cloud">Tags
+        <div class="tags-cloud" style="margin-top: 2em;">Tags
           <div>
             {% assign first = site.tags.first %}
             {% assign max = first[1].size %}
