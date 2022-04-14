@@ -1,6 +1,9 @@
 ---
 layout: post
 title: log 테이블의 파티션 관리 프로시저에 대해
+comments: true
+categories: [MySQL]
+tag: [MySQL]
 ---
 
 ## Purpose of Study

@@ -1,6 +1,9 @@
 ---
 layout: post
 title: Grafana와 Prometheus를 활용한 MySQL 모니터링
+comments: true
+categories: [MySQL]
+tag: [MySQL,Grafana,Prometheus]
 ---
 
 ## Purpose of Study
