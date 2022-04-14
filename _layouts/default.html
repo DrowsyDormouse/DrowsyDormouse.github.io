@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>{% if page.title %}{{ page.title }} – {% endif %}{{ site.name }} – {{ site.description }}</title>
-
+    {% include head.html %}
     {% include meta.html %}
     <style>
       #div_side_nav{
