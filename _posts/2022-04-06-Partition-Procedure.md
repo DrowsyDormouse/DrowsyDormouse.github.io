@@ -40,6 +40,10 @@ MySQL 파티션 시스템을 편리하게 관리하는 프로시저를 학습하
 
 ## log 테이블의 파티션 관리 프로시저에 대해
  - [Purpose of Study](#purpose-of-study)
+ - [What is this?](#what-is-this)
+    + 파티션이란?
+ - [Why Choose this?](#why-choose-this)
+ - [Let's Get Started](#lets-get-started)
 
 <br/>
 
@@ -69,10 +73,37 @@ MySQL 파티션 시스템을 편리하게 관리하는 프로시저를 학습하
   
 <br/>
 
+## What is this?
+
 ### 파티션이란  
 데이터를 별도의 테이블로 분리해서 저장하나, 사용자 입장에서 하나의 테이블로 읽기와 쓰기를 할 수 있게 해주는 기능  
 
-#### 파티션을 사용하는 이유
+## Why Choose this?
  1. INSERT와 범위 SELECT의 빠른 처리
  2. 주기적으로 삭제 등의 작업이 이루어지는 이력성 데이터의 효율적인 관리
  3. 데이터의 물리적인 저장소를 분리 
+
+
+## Let's Get Started  
+그러면 파티션 테이블을 직접 사용해봅시다. 
+임시로 가상의 로그 테이블 sample_log 을 생성합니다.  
+<br/>
+``` 
+CREATE TABLE sample_log{
+    log_date datetime NOT NULL,
+    log_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
+    PRIMARY KEY (log_date, log_id)
+};
+```
+임시 데이터를 넣어봅시다. 저는 아래와 같이 넣었습니다.  
+
+|log_date|log_id|
+|--------|------|
+|'2022-01-01 00:00:00'|1|
+|'2022-01-02 00:00:00'|2|
+|'2022-01-03 00:00:00'|3|
+|...|...|
+
+<br/>
+
+새로운 파티션을 만들려면 아래와 같이 쿼리를 칩니다. 
