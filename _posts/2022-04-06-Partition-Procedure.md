@@ -105,11 +105,38 @@ CREATE TABLE sample_log{
 
 <br/>
 
-|log_date|log_id|
-|--------|------|
-|'2022-01-01 00:00:00'|1|
-|'2022-01-02 00:00:00'|2|
-|'2022-01-03 00:00:00'|3|
-|...|...|
+<table>
+    <th>log_date </th>
+    <th>log_id </th>
+    <tr>
+        <td>'2021-12-01 00:00:00'</td>
+        <td>1</td>
+    </tr>
+    <tr>
+        <td>'2021-12-02 00:00:00'</td>
+        <td>2</td>
+    </tr>
+    <tr>
+        <td>'2021-12-03 00:00:00'</td>
+        <td>3</td>
+    </tr>
+    <tr>
+        <td>...</td>
+        <td>...</td>
+    </tr>
+</table>
   
 <br/>
+
+파티션을 생성해봅시다.  
+
+```
+ALTER TABLE sample_log
+    PARTITION BY RANGE(log_date)
+    PRRTITIONS 8;
+
+ALTER TABLE sample_log
+    ADD PARTITON (
+        PARTITION n VALUES LESS THAN ('2022-01-01')
+    );
+```
