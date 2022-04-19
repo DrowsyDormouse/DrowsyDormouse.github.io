@@ -126,6 +126,10 @@ CREATE TABLE sample_log{
             <td>...</td>
             <td>...</td>
         </tr>
+        <tr>
+            <td>'2022-03-31 00:00:00'</td>
+            <td>121</td>
+        </tr>
     </table>
 </div>
 <br/>
@@ -139,11 +143,42 @@ ALTER TABLE sample_log
         PARTITION p_20211201 VALUES LESS THAN ('2022-01-01') ENGINE=InnoDB,
         PARTITION p_MAX VALUES LESS THAN MAXVALUE ENGINE=InnoDB
     );
-```
+```  
+
+위와 같이 파티션을 생성해보면 22년 1월 1일 이전 데이터로 구성된 p_20211201 파티션과 나머지로 구성된 M_MAX 파티션이 생성됩니다.
 
 ```
 SELECT * FROM sample_log PARTITION (p_20220101);
 ```  
+
+<div>
+    <table>
+        <th>log_date </th>
+        <th>log_id </th>
+        <tr>
+            <td>'2021-12-01 00:00:00'</td>
+            <td>1</td>
+        </tr>
+        <tr>
+            <td>'2021-12-02 00:00:00'</td>
+            <td>2</td>
+        </tr>
+        <tr>
+            <td>'2021-12-03 00:00:00'</td>
+            <td>3</td>
+        </tr>
+        <tr>
+            <td>...</td>
+            <td>...</td>
+        </tr>
+        <tr>
+            <td>'2021-12-31 00:00:00'</td>
+            <td>31</td>
+        </tr>
+    </table>
+</div>
+<br/>
+
 
 <br/>
 
@@ -151,3 +186,30 @@ SELECT * FROM sample_log PARTITION (p_20220101);
 SELECT * FROM sample_log PARTITION (p_MAX);
 ```  
 
+<div>
+    <table>
+        <th>log_date </th>
+        <th>log_id </th>
+        <tr>
+            <td>'2022-01-01 00:00:00'</td>
+            <td>32</td>
+        </tr>
+        <tr>
+            <td>'2022-01-02 00:00:00'</td>
+            <td>33</td>
+        </tr>
+        <tr>
+            <td>'2022-01-03 00:00:00'</td>
+            <td>34</td>
+        </tr>
+        <tr>
+            <td>...</td>
+            <td>...</td>
+        </tr>
+        <tr>
+            <td>'2022-03-31 00:00:00'</td>
+            <td>121</td>
+        </tr>
+    </table>
+</div>
+<br/>
