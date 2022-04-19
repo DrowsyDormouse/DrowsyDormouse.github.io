@@ -101,13 +101,20 @@ Range, List, Hash, Key, 이렇게 4가지 방식이 있음.
 임시로 가상의 로그 테이블 sample_log 을 생성합니다.  
 <br/>
 
-~~~SQL
+```SQL
 CREATE TABLE sample_log{
     log_date datetime NOT NULL,
     log_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
     PRIMARY KEY (log_date, log_id)
 };
-~~~
+```
+
+
+```javascript
+/* Some pointless Javascript */
+var rawr = ["r", "a", "w", "r"];
+```
+
 임시 데이터를 넣어봅시다. 저는 아래와 같이 넣었습니다.  
 
 <br/>
