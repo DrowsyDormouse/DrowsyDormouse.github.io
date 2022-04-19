@@ -128,7 +128,7 @@ Grafana를 다운로드 받았다면 bin 안에 있는 grafana 서버 실행 파
 
 Prometheus는 prometheus.yml 파일을 사용하여 기본적인 설정을 할 수 있습니다. 
 
-```
+```Shell
 # 기본적인 전역 설정
 global:
   scrape_interval:     15s # 매트릭 수집 주기
@@ -166,7 +166,7 @@ scrape_configs:
 
     
 
-```
+```Shell
 # my global config
 global:
   scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
@@ -223,7 +223,7 @@ scrape_configs:
 
     
 
-```
+```Shell
     static_configs:
     - targets: ['Slave IP1:9090']
       labels:
@@ -254,8 +254,8 @@ CentOS 장비에 mysqld_exporter, prometheus를 설치해줍니다.
 node_exporter 의 경우는 이번 글에서 사용하지 않았으나 함께 첨부합니다.   
 
 다음은 mysqld_exporter의 설정입니다. 
-
-``` 
+  
+```Shell
 [client]
 user=exporter
 password=USER_PASSWORD
@@ -270,7 +270,8 @@ allowOldPasswords=1
 테스트용 장비의 DB의 경우, 사용 버전이 낮아, old_password에 대한 설정이 필요했습니다.   
 
 다음은 Prometheus의 설정입니다. 
-```
+
+```Shell
 # my global config
 global:
   scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.

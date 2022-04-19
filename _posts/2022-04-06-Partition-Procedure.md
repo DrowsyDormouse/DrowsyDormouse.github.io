@@ -44,6 +44,7 @@ MySQL 파티션 시스템을 편리하게 관리하는 프로시저를 학습하
     + 파티션이란?
  - [Why Choose this?](#why-choose-this)
  - [Let's Get Started](#lets-get-started)
+ - [Completion](#최종-프로시저-모습)
 
 <br/>
 
@@ -231,3 +232,381 @@ ALTER TABLE sample_log -- 파티션이 추가될 테이블명
         PARTITION p_MAX VALUES LESS THAN MAXVALUE ENGINE=InnoDB
     );
 ```  
+
+위 쿼리를 분석하므로써, 파티션을 추가할 때, 필요한 파츠가 무엇인지 알 수 있습니다. 
+
+
+
+## 최종 프로시저 모습  
+
+### 이미 파티션이 있는 테이블에 추가로 생성(Update)
+```SQL
+-- `pUpd_Sample_Partition`
+PROCEDURE pUpd_Sample_Partition (OUT V_RET int, IN IN_PUT_NUM int)
+BEGIN
+  /*=======================================================    
+    @create by Se-Hee Song - 220112(KST)
+    @ 이미 파티셔닝 된 로그 테이블에 추가로 파티션 생성
+    @
+  =========================================================*/
+
+  DECLARE v_vch_log_table_name varchar(64);
+  DECLARE v_vch_log_date_column_name varchar(64);
+  DECLARE v_vch_retention_period smallint;
+  DECLARE v_vch_log_read_cycle tinyint;
+  DECLARE v_vch_partition_name varchar(64);
+
+  DECLARE v_now_dw tinyint(4) DEFAULT WEEKDAY(NOW());
+  DECLARE v_now_date datetime DEFAULT NOW();
+  DECLARE v_now_year_date datetime DEFAULT DATE_FORMAT(NOW(), '%Y-01-01');
+  DECLARE v_now_month_date datetime DEFAULT DATE_FORMAT(NOW(), '%Y-%m-01'); -- 이번달 1일
+  DECLARE v_now_monday datetime DEFAULT DATE_ADD(NOW(), INTERVAL -v_now_dw DAY); -- 이번주 월요일
+
+  DECLARE v_int_retention_period int UNSIGNED;
+  DECLARE v_int_partition_count int UNSIGNED;
+  DECLARE v_dat_start_date date;
+
+  DECLARE v_int_i int UNSIGNED;
+  DECLARE v_int_j int UNSIGNED;
+
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION SET V_RET = -1;
+
+  SET SESSION group_concat_max_len = 1000000;
+
+  DROP TABLE IF EXISTS tmp_reorganize;
+
+  CREATE TEMPORARY TABLE tmp_reorganize (
+    seq int UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    log_table_name varchar(64) NOT NULL,
+    log_retention_period smallint NOT NULL,
+    log_read_cycle tinyint(4) NOT NULL, -- 0: Year, 1: Month, 2: Week, 3: Day
+    start_date date NOT NULL,
+    partition_name varchar(64) NOT NULL
+  );
+
+  INSERT tmp_reorganize (log_table_name, log_retention_period, log_read_cycle, start_date, partition_name)
+    SELECT STRAIGHT_JOIN
+      LPM.log_table_name,
+      LPM.retention_period,
+      LPM.log_read_cycle,
+      DATE_FORMAT(RIGHT(P.PARTITION_NAME, 8), '%Y-%m-%d'),
+      P.PARTITION_NAME
+    FROM log_retention LPM
+      INNER JOIN information_schema.PARTITIONS P
+        ON P.TABLE_SCHEMA = DATABASE()
+        AND P.TABLE_NAME = LPM.log_table_name
+    WHERE P.PARTITION_DESCRIPTION = 'MAXVALUE'
+    AND RIGHT(P.PARTITION_NAME, 8) < RIGHT(CONCAT('p_', DATE(TIMESTAMPADD(year, IN_PUT_NUM + 1, v_now_year_date)) + 0, '_', DATE(TIMESTAMPADD(year, IN_PUT_NUM + 2, v_now_year_date)) + 0), 8)
+    AND LPM.log_read_cycle = 0; -- Year
+
+  INSERT tmp_reorganize (log_table_name, log_retention_period, log_read_cycle, start_date, partition_name)
+    SELECT STRAIGHT_JOIN
+      LPM.log_table_name,
+      LPM.retention_period,
+      LPM.log_read_cycle,
+      DATE_FORMAT(RIGHT(P.PARTITION_NAME, 8), '%Y-%m-%d'),
+      P.PARTITION_NAME
+    FROM log_retention LPM
+      INNER JOIN information_schema.PARTITIONS P
+        ON P.TABLE_SCHEMA = DATABASE()
+        AND P.TABLE_NAME = LPM.log_table_name
+    WHERE P.PARTITION_DESCRIPTION = 'MAXVALUE'
+    AND RIGHT(P.PARTITION_NAME, 8) < RIGHT(CONCAT('p_', DATE(TIMESTAMPADD(MONTH, IN_PUT_NUM + 1, v_now_month_date)) + 0, '_', DATE(TIMESTAMPADD(MONTH, IN_PUT_NUM + 2, v_now_month_date)) + 0), 8)
+    AND LPM.log_read_cycle = 1; -- Month
+
+  INSERT tmp_reorganize (log_table_name, log_retention_period, log_read_cycle, start_date, partition_name)
+    SELECT STRAIGHT_JOIN
+      LPM.log_table_name,
+      LPM.retention_period,
+      LPM.log_read_cycle,
+      DATE_FORMAT(RIGHT(P.PARTITION_NAME, 8), '%Y-%m-%d'),
+      P.PARTITION_NAME
+    FROM log_retention LPM
+      INNER JOIN information_schema.PARTITIONS P
+        ON P.TABLE_SCHEMA = DATABASE()
+        AND P.TABLE_NAME = LPM.log_table_name
+    WHERE P.PARTITION_DESCRIPTION = 'MAXVALUE'
+    AND RIGHT(P.PARTITION_NAME, 8) < RIGHT(CONCAT('p_', DATE(TIMESTAMPADD(WEEK, IN_PUT_NUM + 1, v_now_monday)) + 0, '_', DATE(TIMESTAMPADD(WEEK, IN_PUT_NUM + 2, v_now_monday)) + 0), 8)
+    AND LPM.log_read_cycle = 2; -- Week
+
+  INSERT tmp_reorganize (log_table_name, log_retention_period, log_read_cycle, start_date, partition_name)
+    SELECT STRAIGHT_JOIN
+      LPM.log_table_name,
+      LPM.retention_period,
+      LPM.log_read_cycle,
+      DATE_FORMAT(RIGHT(P.PARTITION_NAME, 8), '%Y-%m-%d'),
+      P.PARTITION_NAME
+    FROM log_retention LPM
+      INNER JOIN information_schema.PARTITIONS P
+        ON P.TABLE_SCHEMA = DATABASE()
+        AND P.TABLE_NAME = LPM.log_table_name
+    WHERE P.PARTITION_DESCRIPTION = 'MAXVALUE'
+    AND RIGHT(P.PARTITION_NAME, 8) < RIGHT(CONCAT('p_', DATE(TIMESTAMPADD(DAY, IN_PUT_NUM + 1, v_now_date)) + 0), 8)
+    AND LPM.log_read_cycle = 3; -- Day
+
+  SELECT
+    1,
+    COUNT(*) INTO v_int_i, v_int_j
+  FROM tmp_reorganize;
+
+  WHILE v_int_i <= v_int_j DO
+    SELECT
+      log_table_name,
+      log_retention_period,
+      log_read_cycle,
+      start_date,
+      partition_name INTO v_vch_log_table_name, v_vch_retention_period, v_vch_log_read_cycle, v_dat_start_date, v_vch_partition_name
+    FROM tmp_reorganize FORCE INDEX FOR JOIN (PRIMARY)
+    WHERE seq = v_int_i;
+
+    IF (v_vch_log_read_cycle = 0) THEN -- Year
+      SET v_dat_start_date = DATE_FORMAT(v_dat_start_date, '%Y-01-01');
+      SET v_int_partition_count = TIMESTAMPDIFF(year, v_dat_start_date, DATE(TIMESTAMPADD(year, IN_PUT_NUM, v_now_year_date)));
+
+      -- ALTER TABLE .. REORGANIZE PARTITION .. 문을 동적 쿼리로 생성하여 실행
+      SELECT
+        CONCAT('ALTER TABLE `', v_vch_log_table_name,
+        '` REORGANIZE PARTITION ', v_vch_partition_name, ' INTO (',
+        GROUP_CONCAT('  PARTITION p_', DATE(TIMESTAMPADD(year, (num - 1), v_dat_start_date)) + 0, '_', DATE(TIMESTAMPADD(DAY, -1, TIMESTAMPADD(year, num, v_dat_start_date))) + 0,
+        ' VALUES LESS THAN ', IF(num = v_int_partition_count, 'MAXVALUE', CONCAT('(''', DATE(TIMESTAMPADD(year, num, v_dat_start_date)), ''')')), ' ENGINE = InnoDB' SEPARATOR ','), ');'
+        ) INTO @vch_stmt
+      FROM join_num FORCE INDEX FOR JOIN (PRIMARY)
+      WHERE num <= v_int_partition_count;
+
+    ELSEIF (v_vch_log_read_cycle = 1) THEN -- Month
+      SET v_dat_start_date = DATE_FORMAT(v_dat_start_date, '%Y-%m-01');
+      SET v_int_partition_count = TIMESTAMPDIFF(MONTH, v_dat_start_date, DATE(TIMESTAMPADD(MONTH, IN_PUT_NUM, v_now_month_date)));
+
+      -- ALTER TABLE .. REORGANIZE PARTITION .. 문을 동적 쿼리로 생성하여 실행
+      SELECT
+        CONCAT('ALTER TABLE `', v_vch_log_table_name,
+        '` REORGANIZE PARTITION ', v_vch_partition_name, ' INTO (',
+        GROUP_CONCAT('  PARTITION p_', DATE(TIMESTAMPADD(MONTH, (num - 1), v_dat_start_date)) + 0, '_', DATE(TIMESTAMPADD(DAY, -1, TIMESTAMPADD(MONTH, num, v_dat_start_date))) + 0,
+        ' VALUES LESS THAN ', IF(num = v_int_partition_count, 'MAXVALUE', CONCAT('(''', DATE(TIMESTAMPADD(MONTH, num, v_dat_start_date)), ''')')), ' ENGINE = InnoDB' SEPARATOR ','), ');'
+        ) INTO @vch_stmt
+      FROM join_num FORCE INDEX FOR JOIN (PRIMARY)
+      WHERE num <= v_int_partition_count;
+
+    ELSEIF (v_vch_log_read_cycle = 2) THEN -- Week
+      -- 추가할 파티션의 개수
+      -- SET v_int_partition_count = TIMESTAMPDIFF(DAY, v_dat_start_date, DATE(TIMESTAMPADD(DAY, pi_int_partition_buffer + 1, v_dt5_now)));
+      SET v_int_partition_count = TIMESTAMPDIFF(WEEK, v_dat_start_date, DATE(TIMESTAMPADD(WEEK, IN_PUT_NUM + 1, v_now_monday)));
+
+      -- ALTER TABLE .. REORGANIZE PARTITION .. 문을 동적 쿼리로 생성하여 실행
+      SELECT
+        CONCAT('ALTER TABLE `', v_vch_log_table_name,
+        '` REORGANIZE PARTITION ', v_vch_partition_name, ' INTO (',
+        GROUP_CONCAT('  PARTITION p_', DATE(TIMESTAMPADD(WEEK, num - 1, v_dat_start_date)) + 0, '_', DATE(TIMESTAMPADD(WEEK, num, v_dat_start_date)) + 0,
+        ' VALUES LESS THAN ', IF(num = v_int_partition_count, 'MAXVALUE', CONCAT('(''', DATE(TIMESTAMPADD(WEEK, num, v_dat_start_date)), ''')')), ' ENGINE = InnoDB' SEPARATOR ','), ');'
+        ) INTO @vch_stmt
+      FROM join_num FORCE INDEX FOR JOIN (PRIMARY)
+      WHERE num <= v_int_partition_count;
+
+    ELSEIF (v_vch_log_read_cycle = 3) THEN -- Day
+      SET v_int_partition_count = TIMESTAMPDIFF(DAY, v_dat_start_date, DATE(TIMESTAMPADD(DAY, IN_PUT_NUM, v_now_date)));
+
+      -- ALTER TABLE .. REORGANIZE PARTITION .. 문을 동적 쿼리로 생성하여 실행
+      SELECT
+        CONCAT('ALTER TABLE `', v_vch_log_table_name,
+        '` REORGANIZE PARTITION ', v_vch_partition_name, ' INTO (',
+        GROUP_CONCAT('  PARTITION p_', DATE(TIMESTAMPADD(DAY, num, v_dat_start_date)) + 0,
+        ' VALUES LESS THAN ', IF(num = v_int_partition_count, 'MAXVALUE', CONCAT('(''', DATE(TIMESTAMPADD(DAY, num, v_dat_start_date)), ''')')), ' ENGINE = InnoDB' SEPARATOR ','), ');'
+        ) INTO @vch_stmt
+      FROM join_num FORCE INDEX FOR JOIN (PRIMARY)
+      WHERE num <= v_int_partition_count;
+
+    END IF;
+
+    IF @vch_stmt IS NOT NULL THEN
+      PREPARE stmt FROM @vch_stmt;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+    END IF;
+    SET v_int_i = v_int_i + 1;
+  END WHILE;
+
+  DROP TABLE tmp_reorganize;
+END
+```
+
+### 파티션이 없는 테이블에 새로이 생성(Create)
+```SQL
+-- pIns_Sample_Partition
+PROCEDURE pIns_Sample_Partition (OUT V_RET int, IN IN_PUT_NUM int)
+BEGIN
+  /*=======================================================    
+    @create by Se-Hee Song - 220112(KST)
+    @ 아직 파티셔닝 되지 않은 로그 테이블에 최초로 파티션 생성
+    @
+  =========================================================*/
+
+  DECLARE v_vch_log_table_name varchar(64);
+  DECLARE v_vch_log_date_column_name varchar(64);
+  DECLARE v_vch_retention_period smallint;
+  DECLARE v_vch_log_read_cycle tinyint;
+
+  DECLARE v_now_dw tinyint(4);
+  DECLARE v_oldest_dw tinyint(4);
+  DECLARE v_now_date datetime;
+  DECLARE v_oldest_date date;
+  DECLARE v_dat_start_date date;
+  DECLARE v_int_partition_count int UNSIGNED;
+
+  DECLARE v_int_i int UNSIGNED;
+  DECLARE v_int_j int UNSIGNED;
+
+
+  DECLARE EXIT HANDLER FOR SQLEXCEPTION SET V_RET = -1;
+
+  SET SESSION group_concat_max_len = 1000000;
+
+  DROP TEMPORARY TABLE IF EXISTS tmp_create;
+  CREATE TEMPORARY TABLE tmp_create (
+    seq int UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    log_table_name varchar(64) NOT NULL,
+    log_date_column_name varchar(64) NOT NULL,
+    log_retention_period smallint NOT NULL,
+    log_read_cycle tinyint(4) NOT NULL -- 0: Year, 1: Month, 2: Week, 3: Day
+  );
+
+  INSERT tmp_create (log_table_name, log_date_column_name, log_retention_period, log_read_cycle)
+    SELECT STRAIGHT_JOIN
+      LPM.log_table_name,
+      LPM.log_date_column_name,
+      LPM.retention_period,
+      LPM.log_read_cycle
+    FROM log_retention LPM
+      INNER JOIN information_schema.PARTITIONS P
+        ON P.TABLE_SCHEMA = DATABASE()
+        AND P.TABLE_NAME = LPM.log_table_name
+    WHERE P.PARTITION_NAME IS NULL;
+
+  SELECT
+    1,
+    COUNT(*) INTO v_int_i, v_int_j
+  FROM tmp_create;
+  -- 1.2 아직 파티셔닝 되지 않은 로그 테이블에 최초로 파티션 생성
+  --  ㄴ 임시 테이블 `tmp_create`의 Rows 수 만큼 LOOP
+  --    ㄴ 파티션 생성이 필요한 로그 테이블의 수 만큼 LOOP
+  WHILE v_int_i <= v_int_j DO
+    -- 테이블에 기록된 "가장 오래된 날짜"를 담을 세션 변수 초기화
+    --  ㄴ 동적 쿼리를 사용해 조회한 결과를 외부로 추출해야 하기 때문에 로컬 변수를 사용할 수 없음
+    SET @dt5_oldest_log_date = NULL;
+
+    -- 이번 LOOP에서 파티션을 생성할 테이블에 대해, 파티션 생성에 필요한 정보를 추출
+    --  ㄴ log_table_name, log_date_column_name은 tmp_create 테이블에서 직접 추출
+    --  ㄴ oldest_log_date는 동적 쿼리를 만들어 추출
+    SELECT
+      CONCAT(
+      'SELECT ', log_date_column_name, '
+          INTO @dt5_oldest_log_date
+          FROM ', log_table_name, '
+          FORCE INDEX FOR ORDER BY (PRIMARY)
+          ORDER BY ', log_date_column_name, '
+          LIMIT 1;'
+      ) AS dynamic_query,
+      log_table_name,
+      log_date_column_name,
+      log_retention_period,
+      log_read_cycle INTO @vch_stmt, v_vch_log_table_name, v_vch_log_date_column_name, v_vch_retention_period, v_vch_log_read_cycle
+    FROM tmp_create FORCE INDEX FOR JOIN (PRIMARY)
+    WHERE seq = v_int_i;
+
+    -- oldest_log_date를 구하기 위해 동적 쿼리 @vch_stmt 실행
+    PREPARE stmt FROM @vch_stmt;
+    EXECUTE stmt;
+    DEALLOCATE PREPARE stmt; -- 삭제 
+
+    -- log_read_cycle 에 따라 파티션 주기가 달라짐. 
+    -- 각 주기에 맞춰서 프로시저 호출 
+    IF (v_vch_log_read_cycle = 0) THEN -- Year
+      SET v_now_date = DATE_FORMAT(NOW(), '%Y-01-01');
+      SET v_oldest_date = DATE_FORMAT(@dt5_oldest_log_date, '%Y-01-01'); -- 기록된 가장 오래된 년도의 1월 1일
+      SET v_dat_start_date = DATE(IFNULL(v_oldest_date, v_now_date)); -- 첫 파티션 일자 : 테이블에 기록된 가장 오래된 년도의 1월 1일
+      -- 만드는 파티션의 총 개수 = 파티션 시작 일자 ~ 오늘까지 기간 + 버퍼 삼아 미리 만들 파티션의 수
+      SET v_int_partition_count = TIMESTAMPDIFF(year, v_dat_start_date, DATE(TIMESTAMPADD(year, IN_PUT_NUM, v_now_date)));
+      -- ALTER TABLE .. PARTITION BY RANGE COLUMN .. 문을 동적 쿼리로 생성하여 실행
+      SELECT
+        CONCAT('ALTER TABLE `', v_vch_log_table_name,
+        '` PARTITION BY RANGE COLUMNS (`', v_vch_log_date_column_name, '`) (',
+        GROUP_CONCAT('  PARTITION p_', DATE(TIMESTAMPADD(year, (num - 1), v_dat_start_date)) + 0, '_', DATE(TIMESTAMPADD(DAY, -1, TIMESTAMPADD(year, num, v_dat_start_date))) + 0,
+        ' VALUES LESS THAN ', IF(num = v_int_partition_count, 'MAXVALUE', CONCAT('(''', DATE(TIMESTAMPADD(year, num, v_dat_start_date)), ''')')), ' ENGINE = InnoDB' SEPARATOR ','), ');'
+        ) INTO @vch_stmt
+      FROM JOIN_NUM FORCE INDEX FOR JOIN (PRIMARY)
+      WHERE num <= v_int_partition_count;
+
+      PREPARE stmt FROM @vch_stmt;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+    ELSEIF (v_vch_log_read_cycle = 1) THEN -- Month
+      SET v_now_date = DATE_FORMAT(NOW(), '%Y-01-01'); -- 이번달 1일
+      SET v_oldest_date = DATE_FORMAT(@dt5_oldest_log_date, '%Y-%m-01'); -- 기록된 가장 오래된 달의 1일
+      SET v_dat_start_date = DATE(IFNULL(v_oldest_date, v_now_date)); -- 첫 파티션 일자 : 테이블에 기록된 가장 오래된 달의 1일
+      -- 만드는 파티션의 총 개수 = 파티션 시작 일자 ~ 오늘까지 기간 + 버퍼 삼아 미리 만들 파티션의 수
+      SET v_int_partition_count = TIMESTAMPDIFF(MONTH, v_dat_start_date, DATE(TIMESTAMPADD(MONTH, IN_PUT_NUM, v_now_date)));
+      -- ALTER TABLE .. PARTITION BY RANGE COLUMN .. 문을 동적 쿼리로 생성하여 실행
+      SELECT
+        CONCAT('ALTER TABLE `', v_vch_log_table_name,
+        '` PARTITION BY RANGE COLUMNS (`', v_vch_log_date_column_name, '`) (',
+        GROUP_CONCAT('  PARTITION p_', DATE(TIMESTAMPADD(MONTH, (num - 1), v_dat_start_date)) + 0, '_', DATE(TIMESTAMPADD(DAY, -1, TIMESTAMPADD(MONTH, num, v_dat_start_date))) + 0,
+        ' VALUES LESS THAN ', IF(num = v_int_partition_count, 'MAXVALUE', CONCAT('(''', DATE(TIMESTAMPADD(MONTH, num, v_dat_start_date)), ''')')), ' ENGINE = InnoDB' SEPARATOR ','), ');'
+        ) INTO @vch_stmt
+      FROM JOIN_NUM FORCE INDEX FOR JOIN (PRIMARY)
+      WHERE num <= v_int_partition_count;
+
+      PREPARE stmt FROM @vch_stmt;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+    ELSEIF (v_vch_log_read_cycle = 2) THEN -- Week
+      SET v_now_dw = WEEKDAY(NOW());
+      SET v_now_date = DATE_ADD(NOW(), INTERVAL -v_now_dw DAY); -- 이번주 월요일
+      SET v_oldest_dw = WEEKDAY(@dt5_oldest_log_date);
+      SET v_oldest_date = DATE_ADD(@dt5_oldest_log_date, INTERVAL -v_oldest_dw DAY); -- 기록된 가장 오래된 날짜의 주의 월요일 
+      SET v_dat_start_date = DATE(IFNULL(v_oldest_date, v_now_date)); -- 첫 파티션 일자 : 테이블에 기록된 가장 오래된 날짜의 주의 월요일. 테이블이 비어있다면 이번주 월요일
+
+      -- 만드는 파티션의 총 개수 = 파티션 시작 일자 ~ 오늘까지 기간 + 버퍼 삼아 미리 만들 파티션의 수
+      -- IN_PUT_NUM은 만들 파티션이 몇주치인가 이므로 몇주치를 일자로 변경해야함. 
+      -- 첫 로그 월요일 부터 일요일 -> 1개 
+      -- 1 ~ + IN_PUT_NUM 
+      SET v_int_partition_count = TIMESTAMPDIFF(WEEK, v_dat_start_date, DATE(TIMESTAMPADD(WEEK, IN_PUT_NUM + 1, v_oldest_date)));
+
+      -- ALTER TABLE .. PARTITION BY RANGE COLUMN .. 문을 동적 쿼리로 생성하여 실행
+      SELECT
+        CONCAT('ALTER TABLE `', v_vch_log_table_name,
+        '` PARTITION BY RANGE COLUMNS (`', v_vch_log_date_column_name, '`) (',
+        GROUP_CONCAT('  PARTITION p_', DATE(TIMESTAMPADD(WEEK, (num - 1), v_dat_start_date)) + 0, '_', DATE(TIMESTAMPADD(DAY, -1, TIMESTAMPADD(WEEK, num, v_dat_start_date))) + 0,
+        ' VALUES LESS THAN ', IF(num = v_int_partition_count, 'MAXVALUE', CONCAT('(''', DATE(TIMESTAMPADD(WEEK, num, v_dat_start_date)), ''')')), ' ENGINE = InnoDB' SEPARATOR ','), ');'
+        ) INTO @vch_stmt
+      FROM JOIN_NUM FORCE INDEX FOR JOIN (PRIMARY)
+      WHERE num <= v_int_partition_count;
+
+      PREPARE stmt FROM @vch_stmt;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+    ELSEIF (v_vch_log_read_cycle = 3) THEN -- Day
+      SET v_dat_start_date = DATE(IFNULL(@dt5_oldest_log_date, NOW())); -- 첫 파티션 일자 : 테이블에 기록된 가장 오래된 날
+
+      -- 만드는 파티션의 총 개수 = 파티션 시작 일자 ~ 오늘까지 기간 + 버퍼 삼아 미리 만들 파티션의 수
+      SET v_int_partition_count = TIMESTAMPDIFF(DAY, v_dat_start_date, DATE(TIMESTAMPADD(DAY, IN_PUT_NUM + 1, NOW())));
+
+      -- ALTER TABLE .. PARTITION BY RANGE COLUMN .. 문을 동적 쿼리로 생성하여 실행
+      SELECT
+        CONCAT('ALTER TABLE `', v_vch_log_table_name,
+        '` PARTITION BY RANGE COLUMNS (`', v_vch_log_date_column_name, '`) (',
+        GROUP_CONCAT('  PARTITION p_', DATE(TIMESTAMPADD(DAY, num, v_dat_start_date)) + 0,
+        ' VALUES LESS THAN ', IF(num = v_int_partition_count, 'MAXVALUE', CONCAT('(''', DATE(TIMESTAMPADD(DAY, num, v_dat_start_date)), ''')')), ' ENGINE = InnoDB' SEPARATOR ','), ');'
+        ) INTO @vch_stmt
+      FROM JOIN_NUM FORCE INDEX FOR JOIN (PRIMARY)
+      WHERE num <= v_int_partition_count;
+
+      PREPARE stmt FROM @vch_stmt;
+      EXECUTE stmt;
+      DEALLOCATE PREPARE stmt;
+    END IF;
+
+    SET v_int_i = v_int_i + 1;
+  END WHILE;
+  DROP TABLE tmp_create;
+  SET V_RET = 0;
+END
+```
