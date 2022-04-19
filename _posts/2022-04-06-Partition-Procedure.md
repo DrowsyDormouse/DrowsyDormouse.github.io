@@ -86,16 +86,21 @@ Range, List, Hash, Key, 이렇게 4가지 방식이 있음.
 
 
 ## Why Choose this?
+그렇다면 왜 파티션을 이용해야할까요?  
+파티션을 이용할 경우, 아래와 같은 장점이 있습니다.  
+
  1. INSERT와 범위 SELECT의 빠른 처리
  2. 주기적으로 삭제 등의 작업이 이루어지는 이력성 데이터의 효율적인 관리
  3. 데이터의 물리적인 저장소를 분리 
 
 
 ## Let's Get Started  
-그러면 파티션 테이블을 직접 사용해봅시다. 
+백문이 불여일견!  
+파티션 테이블을 직접 사용해봅시다.  
 임시로 가상의 로그 테이블 sample_log 을 생성합니다.  
 <br/>
-``` 
+
+```SQL
 CREATE TABLE sample_log{
     log_date datetime NOT NULL,
     log_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
@@ -134,9 +139,9 @@ CREATE TABLE sample_log{
 </div>
 <br/>
 
-파티션을 생성해봅시다.  
+이제 파티션을 생성해봅시다.  
 
-```
+```SQL
 ALTER TABLE sample_log
     PARTITION BY RANGE(log_date)
     (
@@ -146,11 +151,13 @@ ALTER TABLE sample_log
 ```  
 
 위와 같이 파티션을 생성해보면 22년 1월 1일 이전 데이터로 구성된 p_20211201 파티션과 나머지로 구성된 M_MAX 파티션이 생성됩니다.
+  
 
-```
+#### 파티션 조회 시, 결과 예시  
+
+```SQL
 SELECT * FROM sample_log PARTITION (p_20220101);
 ```  
-
 <div>
     <table>
         <th>log_date </th>
@@ -179,10 +186,7 @@ SELECT * FROM sample_log PARTITION (p_20220101);
 </div>
 <br/>
 
-
-<br/>
-
-```
+```SQL
 SELECT * FROM sample_log PARTITION (p_MAX);
 ```  
 
@@ -213,3 +217,17 @@ SELECT * FROM sample_log PARTITION (p_MAX);
     </table>
 </div>
 <br/>
+
+실제로 파티션을 나눈 뒤, 쿼리를 쳐보면 위 예시와 동일한 결과가 나옵니다.  
+파티션을 생성할 때, 사용하는 쿼리를 다시 한 번 자세히 봅시다.  
+
+```SQL
+ALTER TABLE sample_log -- 파티션이 추가될 테이블명
+    PARTITION BY RANGE(log_date) -- 파티션의 구분 값으로 사용될 컬럼명
+    (
+        PARTITION p_20211201 -- 생성될 파티션 이름
+          VALUES LESS THAN ('2022-01-01') -- 생성될 파티션 기준 값
+          ENGINE=InnoDB,
+        PARTITION p_MAX VALUES LESS THAN MAXVALUE ENGINE=InnoDB
+    );
+```  
