@@ -101,7 +101,7 @@ Range, List, Hash, Key, 이렇게 4가지 방식이 있음.
 임시로 가상의 로그 테이블 sample_log 을 생성합니다.  
 <br/>
 
-````SQL
+````sql
 CREATE TABLE sample_log{
     log_date datetime NOT NULL,
     log_id bigint(20) UNSIGNED NOT NULL DEFAULT 0,
@@ -149,23 +149,23 @@ var rawr = ["r", "a", "w", "r"];
 
 이제 파티션을 생성해봅시다.  
 
-~~~SQL
+```sql
 ALTER TABLE sample_log
     PARTITION BY RANGE(log_date)
     (
         PARTITION p_20211201 VALUES LESS THAN ('2022-01-01') ENGINE=InnoDB,
         PARTITION p_MAX VALUES LESS THAN MAXVALUE ENGINE=InnoDB
     );
-~~~  
+```  
 
 위와 같이 파티션을 생성해보면 22년 1월 1일 이전 데이터로 구성된 p_20211201 파티션과 나머지로 구성된 M_MAX 파티션이 생성됩니다.
   
 
 #### 파티션 조회 시, 결과 예시  
 
-~~~SQL
+```sql
 SELECT * FROM sample_log PARTITION (p_20220101);
-~~~  
+```  
 <div>
     <table>
         <th>log_date </th>
@@ -194,9 +194,9 @@ SELECT * FROM sample_log PARTITION (p_20220101);
 </div>
 <br/>
 
-~~~SQL
+```sql
 SELECT * FROM sample_log PARTITION (p_MAX);
-~~~  
+```  
 
 <div>
     <table>
@@ -229,7 +229,7 @@ SELECT * FROM sample_log PARTITION (p_MAX);
 실제로 파티션을 나눈 뒤, 쿼리를 쳐보면 위 예시와 동일한 결과가 나옵니다.  
 파티션을 생성할 때, 사용하는 쿼리를 다시 한 번 자세히 봅시다.  
 
-~~~SQL
+```sql
 ALTER TABLE sample_log -- 파티션이 추가될 테이블명
     PARTITION BY RANGE(log_date) -- 파티션의 구분 값으로 사용될 컬럼명
     (
@@ -238,7 +238,7 @@ ALTER TABLE sample_log -- 파티션이 추가될 테이블명
           ENGINE=InnoDB,
         PARTITION p_MAX VALUES LESS THAN MAXVALUE ENGINE=InnoDB
     );
-~~~  
+```  
 
 위 쿼리를 분석하므로써, 파티션을 추가할 때, 필요한 파츠가 무엇인지 알 수 있습니다. 
 
@@ -247,7 +247,7 @@ ALTER TABLE sample_log -- 파티션이 추가될 테이블명
 ## 최종 프로시저 모습  
 
 ### 이미 파티션이 있는 테이블에 추가로 생성(Update)
-~~~SQL
+```sql
 -- `pUpd_Sample_Partition`
 PROCEDURE pUpd_Sample_Partition (OUT V_RET int, IN IN_PUT_NUM int)
 BEGIN
@@ -434,10 +434,10 @@ BEGIN
 
   DROP TABLE tmp_reorganize;
 END
-~~~
+```
 
 ### 파티션이 없는 테이블에 새로이 생성(Create)
-~~~SQL
+```sql
 -- pIns_Sample_Partition
 PROCEDURE pIns_Sample_Partition (OUT V_RET int, IN IN_PUT_NUM int)
 BEGIN
@@ -616,4 +616,4 @@ BEGIN
   DROP TABLE tmp_create;
   SET V_RET = 0;
 END
-~~~
+```
