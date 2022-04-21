@@ -240,7 +240,19 @@ ALTER TABLE sample_log -- 파티션이 추가될 테이블명
     );
 ```  
 
-위 쿼리를 분석하므로써, 파티션을 추가할 때, 필요한 파츠가 무엇인지 알 수 있습니다. 
+보시다시피, 파티션이 추가될 테이블명과 파티션의 구분 값으로 사용될 컬럼명, 이렇게 두 개가 필수 값인 거 같네요.
+
+그럼 이제 파티션을 관리할 테이블을 만들어 봅시다. 
+```sql
+CREATE TABLE log_retention (
+  log_table_name varchar(64) NOT NULL COMMENT '로그 테이블 이름',
+  log_date_column_name varchar(64) NOT NULL COMMENT '로그 일자 컬럼 이름',
+  retention_period smallint(5) UNSIGNED NOT  NULL COMMENT '로그 보관 기간',
+  log_read_cycle tinyint(4) DEFAULT NULL COMMENT '0: Year, 1: Month, 2: Week, 3: Day',
+  PRIMARY KEY (log_table_name)
+);
+```  
+위 테이블은 앞으로 로그 테이블을 관리할 테이블입니다.  
 
 
 
