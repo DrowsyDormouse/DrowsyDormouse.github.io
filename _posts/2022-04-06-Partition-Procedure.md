@@ -64,6 +64,7 @@ MySQL 파티션 시스템을 편리하게 관리하는 프로시저를 학습하
  - 이미 파티션이 있을 경우에는 추가해주고 없을 경우에는 새로 생성해줘야 함.  
  - 주 단위는 일요일 또는 월요일부터 시작하는 걸로  
  - 프로시저로 만들어줬으면 좋겠음.
+ - 오래된 파티션을 삭제하는 것은 현재 단계에서는 고려하지 않아도 됨. 
   
 <br/>
   
@@ -266,7 +267,289 @@ INSERT INTO log_retention (log_table_name, log_date_column_name, log_read_cycle)
 VALUES ('sample_log','log_date', 3);
 ```
 
+사용자 로그 파티션 관리 SP를 보고 그대로 Ctrl+C, Ctrl+V 해주도록 합시다.  
+```sql
+-- -----------------------------------------------------
+-- PROCEDURE usp_manage_log_partition
+-- -----------------------------------------------------
+ 
+DELIMITER $$
+ 
+DROP PROCEDURE IF EXISTS `usp_manage_log_partition`$$
+ 
+CREATE DEFINER=CURRENT_USER() PROCEDURE `usp_manage_log_partition`(
+      IN pi_int_partition_buffer int UNSIGNED   -- 버퍼로 미리 만들 파티션의 개수
+    , OUT po_int_return int                     -- 리턴 값
+)
+DETERMINISTIC
+SQL SECURITY DEFINER
+CONTAINS SQL
+COMMENT '
+author : doeyull.kim
+e-mail : purumae@gmail.com
+created date : 2017-07-16
+description : 로그 파티션에 대한 sliding window 작업
+parameter :
+      IN pi_int_partition_buffer int UNSIGNED   -- 버퍼로 미리 만들 파티션의 개수
+    , OUT po_int_return int                     -- 리턴 값
+return value :
+    0 = 에러가 없습니다.
+    -1 = 예상하지 않은 런 타임 오류가 발생하였습니다.
+usage :
+    SET @pi_int_partition_buffer = ;
+    CALL usp_manage_log_partition (@pi_int_partition_buffer, @po_int_return);
+    SELECT @po_int_return;
+'
+proc_body: BEGIN
+    DECLARE v_dt5_now datetime(0) DEFAULT(NOW(0));
+    DECLARE v_int_i int UNSIGNED;
+    DECLARE v_int_j int UNSIGNED;
+    DECLARE v_vch_log_table_name varchar(64);
+    DECLARE v_vch_log_date_column_name varchar(64);
+    DECLARE v_vch_partition_name varchar(64);
+    DECLARE v_dat_start_date date;
+    DECLARE v_int_partition_count int UNSIGNED;
+    DECLARE v_dat_oldest_date date;
+    DECLARE v_int_retention_period int UNSIGNED;
+ 
+    SET SESSION group_concat_max_len = 1000000;
+ 
+    -- STEP 1 : 파티셔닝 되어 있지 않은 로그 테이블에 최초 파티셔닝 적용
+    -- 1.1 아직 파티셔닝 되지 않는 로그 테이블 목록 추출
+    DROP TABLE IF EXISTS tmp_create;
+ 
+    CREATE TEMPORARY TABLE tmp_create (
+        seq int UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        log_table_name varchar(64) NOT NULL,
+        log_date_column_name varchar(64) NOT NULL
+    ) ENGINE = MEMORY;
+ 
+    INSERT tmp_create (log_table_name, log_date_column_name)
+    SELECT STRAIGHT_JOIN log_table_name, log_date_column_name
+    FROM log_retention LPM
+        INNER JOIN information_schema.PARTITIONS P ON P.TABLE_SCHEMA = DATABASE() AND P.TABLE_NAME = LPM.log_table_name
+    WHERE P.PARTITION_NAME IS NULL;
+ 
+    SELECT 1, FOUND_ROWS() INTO v_int_i, v_int_j;
+ 
+    -- 1.2 아직 파티셔닝 되지 않은 로그 테이블에 최초로 파티션 생성
+    --  ㄴ 임시 테이블 `tmp_create`의 Rows 수 만큼 LOOP
+    --    ㄴ 파티션 생성이 필요한 로그 테이블의 수 만큼 LOOP
+    WHILE v_int_i <= v_int_j DO
+        -- 테이블에 기록된 "가장 오래된 날짜"를 담을 세션 변수 초기화
+        --  ㄴ 동적 쿼리를 사용해 조회한 결과를 외부로 추출해야 하기 때문에 로컬 변수를 사용할 수 없음
+        SET @dt5_oldest_log_date = NULL;
+ 
+        -- 이번 LOOP에서 파티션을 생성할 테이블에 대해, 파티션 생성에 필요한 정보를 추출
+        --  ㄴ log_table_name, log_date_column_name은 tmp_create 테이블에서 직접 추출
+        --  ㄴ oldest_log_date는 동적 쿼리를 만들어 추출
+        SELECT CONCAT(
+'SELECT ', log_date_column_name, '
+INTO @dt5_oldest_log_date
+FROM ', log_table_name, '
+FORCE INDEX FOR ORDER BY (PRIMARY)
+ORDER BY ', log_date_column_name, '
+LIMIT 1;'
+        ) AS dynamic_query, log_table_name, log_date_column_name
+        INTO @vch_stmt, v_vch_log_table_name, v_vch_log_date_column_name
+        FROM tmp_create FORCE INDEX FOR JOIN (PRIMARY)
+        WHERE seq = v_int_i;
+ 
+        -- oldest_log_date를 구하기 위해 동적 쿼리 @vch_stmt 실행
+        PREPARE stmt FROM @vch_stmt;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+ 
+        -- 첫 파티션 일자 : 테이블에 기록된 가장 오래된 날짜. 테이블이 비어있다면 "오늘"
+        SET v_dat_start_date = DATE(IFNULL(@dt5_oldest_log_date, v_dt5_now));
+ 
+        -- 만드는 파티션의 총 개수 = 파티션 시작 일자 ~ 오늘까지 기간 + 버퍼 삼아 미리 만들 파티션의 수
+        SET v_int_partition_count = TIMESTAMPDIFF(DAY, v_dat_start_date, DATE(TIMESTAMPADD(DAY, pi_int_partition_buffer + 1, v_dt5_now)));
+ 
+        -- ALTER TABLE .. PARTITION BY RANGE COLUMN .. 문을 동적 쿼리로 생성하여 실행
+        SELECT CONCAT(
+'ALTER TABLE `', v_vch_log_table_name, '` PARTITION BY RANGE COLUMNS (`', v_vch_log_date_column_name, '`) (', GROUP_CONCAT('
+    PARTITION p_', DATE(TIMESTAMPADD(DAY, n - 1, v_dat_start_date)) + 0, ' VALUES LESS THAN ', IF(n = v_int_partition_count, 'MAXVALUE', CONCAT('(''', DATE(TIMESTAMPADD(DAY, n, v_dat_start_date)), ''')')), ' ENGINE = InnoDB' SEPARATOR ','), '
+);'
+        )
+        INTO @vch_stmt
+        FROM tally FORCE INDEX FOR JOIN (PRIMARY)
+        WHERE n <= v_int_partition_count;
+ 
+        PREPARE stmt FROM @vch_stmt;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+ 
+        SET v_int_i = v_int_i + 1;
+    END WHILE;
+    
+    DROP TABLE tmp_create;
+ 
+    -- STEP 2: 정기적인 파티션 추가
+    -- 2.1 파티션 추가가 필요한 로그 테이블 목록 추출
+    --  ㄴ 전제 조건
+    --    ㄴ 마지막 파티션은 LESS THAN MAXVALUE로 설정되어 있어야 함
+    --    ㄴ 파티션 이름의 이름 규칙은 p_ (예) p_20180701
+    DROP TABLE IF EXISTS tmp_reorganize;
+ 
+    CREATE TEMPORARY TABLE tmp_reorganize (
+        seq int UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        log_table_name varchar(64) NOT NULL,
+        start_date date NOT NULL,
+        partition_name varchar(64) NOT NULL
+    ) ENGINE = MEMORY;
+ 
+    INSERT tmp_reorganize (log_table_name, start_date, partition_name)
+    SELECT STRAIGHT_JOIN LPM.log_table_name
+        , DATE_FORMAT(RIGHT(P.PARTITION_NAME, 8), '%Y-%m-%d')
+        , P.PARTITION_NAME
+    FROM log_retention LPM
+        INNER JOIN information_schema.PARTITIONS P ON P.TABLE_SCHEMA = DATABASE() AND P.TABLE_NAME = LPM.log_table_name
+    WHERE P.PARTITION_DESCRIPTION = 'MAXVALUE'
+        AND P.PARTITION_NAME < CONCAT('p_', DATE(TIMESTAMPADD(DAY, pi_int_partition_buffer, v_dt5_now)) + 0);
+ 
+    SELECT 1, FOUND_ROWS() INTO v_int_i, v_int_j;
+ 
+    -- 2.2 파티션 추가가 필요한 로그 테이블에 파티션 추가
+    --  ㄴ 임시 테이블 `tmp_reorganize`의 Rows 수 만큼 LOOP
+    WHILE v_int_i <= v_int_j DO
+        SELECT log_table_name, start_date, partition_name
+        INTO v_vch_log_table_name, v_dat_start_date, v_vch_partition_name
+        FROM tmp_reorganize FORCE INDEX FOR JOIN (PRIMARY)
+        WHERE seq = v_int_i;
+ 
+        -- 추가할 파티션의 개수
+        SET v_int_partition_count = TIMESTAMPDIFF(DAY, v_dat_start_date, DATE(TIMESTAMPADD(DAY, pi_int_partition_buffer + 1, v_dt5_now)));
+ 
+        -- ALTER TABLE .. REORGANIZE PARTITION .. 문을 동적 쿼리로 생성하여 실행
+        SELECT CONCAT(
+'ALTER TABLE `', v_vch_log_table_name, '` REORGANIZE PARTITION ', v_vch_partition_name, ' INTO (', GROUP_CONCAT('
+    PARTITION p_', DATE(TIMESTAMPADD(DAY, n - 1, v_dat_start_date)) + 0, ' VALUES LESS THAN ', IF(n = v_int_partition_count, 'MAXVALUE', CONCAT('(''', DATE(TIMESTAMPADD(DAY, n, v_dat_start_date)), ''')')), ' ENGINE = InnoDB' SEPARATOR ','), '
+);'
+        )
+        INTO @vch_stmt
+        FROM tally FORCE INDEX FOR JOIN (PRIMARY)
+        WHERE n <= v_int_partition_count;
+ 
+        PREPARE stmt FROM @vch_stmt;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;
+ 
+        SET v_int_i = v_int_i + 1;
+    END WHILE;
+ 
+    DROP TABLE tmp_reorganize;
+ 
+    -- STEP 3. 보관 기간이 만료된 파티션 삭제
+    -- 3.1 보존 기간보다 오래된 파티션을 가진 테이블 목록 추출
+    DROP TABLE IF EXISTS tmp_drop;
+ 
+    CREATE TEMPORARY TABLE tmp_drop (
+        seq int UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        log_table_name varchar(64) NOT NULL,
+        oldest_date date NOT NULL,
+        retention_period int UNSIGNED NOT NULL
+    ) ENGINE = MEMORY;
+ 
+    INSERT tmp_drop (log_table_name, oldest_date, retention_period)
+    SELECT LPM.log_table_name
+        , DATE_FORMAT(RIGHT(P.PARTITION_NAME, 8), '%Y-%m-%d')
+        , LPM.retention_period
+    FROM log_retention LPM
+        INNER JOIN information_schema.PARTITIONS P ON P.TABLE_SCHEMA = DATABASE() AND P.TABLE_NAME = LPM.log_table_name
+    WHERE P.PARTITION_ORDINAL_POSITION = 1
+        AND P.PARTITION_NAME < CONCAT('p_', DATE(TIMESTAMPADD(DAY, - LPM.retention_period + 1, v_dt5_now)) + 0);
+ 
+    SELECT 1, FOUND_ROWS() INTO v_int_i, v_int_j;
+ 
+    -- 3.2 로그 테이블에서 만료된 파티션 삭제
+    --  ㄴ 임시 테이블 `tmp_drop`의 Rows 수 만큼 LOOP
+    WHILE v_int_i <= v_int_j DO
+        SELECT log_table_name, oldest_date, retention_period
+        INTO v_vch_log_table_name, v_dat_oldest_date, v_int_retention_period
+        FROM tmp_drop FORCE INDEX FOR JOIN (PRIMARY)
+        WHERE seq = v_int_i;
+ 
+        -- 만료된 파티션이 삭제되었을 때, 파티션의 시작 일자 (이 일자 이전의 파티션은 삭제 대상)
+        SET v_dat_start_date = DATE(TIMESTAMPADD(DAY, - v_int_retention_period + 1, v_dt5_now));
+ 
+        -- 만료된 로그를 임시로 적재할 테이블이 존재하지 않으면 생성
+        --  ㄴ 이름 규칙 : _trash (예) audit_log_trash
+        --  ㄴ 이 단계에서 생성한 %_trash 테이블은 마지막에 drop하지 않고 계속 재활용합니다.
+        --    ㄴ 파티션이 많은 사용자 로그 테이블로부터 CREATE TABLE .. LIKE .. 구문을 사용하여 %_trash 테이블을 만드는 비용이 크기 때문
+        IF NOT EXISTS (
+            SELECT *
+            FROM information_schema.TABLES
+            WHERE TABLE_SCHEMA = DATABASE()
+                AND TABLE_NAME = CONCAT(v_vch_log_table_name, '_trash')
+        ) THEN
+            SET @vch_stmt = CONCAT(
+                'CREATE TABLE `', v_vch_log_table_name, '_trash` LIKE `', v_vch_log_table_name, '`;'
+            );
+        
+            PREPARE stmt FROM @vch_stmt;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+        
+            SET @vch_stmt = CONCAT(
+                'ALTER TABLE `', v_vch_log_table_name, '_trash` REMOVE PARTITIONING;'
+            );
+        
+            PREPARE stmt FROM @vch_stmt;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+        END IF;
+ 
+        -- 3.2.1 삭제해야하는 파티션의 개수 만큼 LOOP
+        WHILE v_dat_oldest_date < v_dat_start_date DO
+            -- ALTER TABLE .. EXCHANGE PARTITION .. WITH TABLE .. 구문을 동적 쿼리로 생성하여 실행
+            --  ㄴ 삭제할 파티션을 %_trash 테이블의 빈 .idb 파일과 교환
+            SET @vch_stmt = CONCAT(
+                'ALTER TABLE `', v_vch_log_table_name, '` EXCHANGE PARTITION p_', v_dat_oldest_date + 0, ' WITH TABLE `', v_vch_log_table_name, '_trash`;'
+            );
+ 
+            PREPARE stmt FROM @vch_stmt;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+ 
+            -- ALTER TABLE .. DROP PARTITION .. 구문을 동적 쿼리로 생성하여 실행
+            --  ㄴ 사용자 로그 테이블에서 빈 파티션을 삭제
+            SET @vch_stmt = CONCAT(
+                'ALTER TABLE `', v_vch_log_table_name, '` DROP PARTITION p_', v_dat_oldest_date + 0, ';'
+            );
+ 
+            PREPARE stmt FROM @vch_stmt;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+ 
+            -- TRUNCATE TABLE .. 구문을 동적 쿼리로 생성하여 실행
+            --  ㄴ %_trash 테이블 비우기
+            SET @vch_stmt = CONCAT(
+                'TRUNCATE TABLE `', v_vch_log_table_name, '_trash`;'
+            );
+ 
+            PREPARE stmt FROM @vch_stmt;
+            EXECUTE stmt;
+            DEALLOCATE PREPARE stmt;
+ 
+            SET v_dat_oldest_date = TIMESTAMPADD(DAY, 1, v_dat_oldest_date);
+        END WHILE;
+ 
+        SET v_int_i = v_int_i + 1;
+    END WHILE;
+ 
+    DROP TABLE tmp_drop;
+ 
+    SET po_int_return = 0;
+END proc_body$$
+ 
+DELIMITER ;
+```
 
+그대로 복사된 내용에서 사용할 부분만 골라내도록 합시다.  
+```sql
+
+```
 
 ## 최종 프로시저 모습  
 
