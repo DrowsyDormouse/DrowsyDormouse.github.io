@@ -115,7 +115,7 @@ db 장비의 기초 환경으로 생각
   
 master 장비의 my.cnf 수정   
   
-```
+```shell
 [mysqld]
 max_allowed_packet=100M
 server-id = 1
