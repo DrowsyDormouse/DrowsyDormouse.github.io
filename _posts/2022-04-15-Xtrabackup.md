@@ -6,11 +6,70 @@ categories: [MySQL]
 tag: [MySQL]
 ---
 
-참고한 글: 
+## Purpose of Study
+Xtrabackup에 대해 알아보고자 하였습니다.  
+아래 글을 참고하였습니다.  
 
-xtarbackup 2.4 버전 소개 및 사용방법: https://myinfrabox.tistory.com/219
+ - xtarbackup 2.4 버전 소개 및 사용방법: [https://myinfrabox.tistory.com/219](https://myinfrabox.tistory.com/219)  
+ - tar 명령어 사용법: [https://moonuibee.tistory.com/4](https://moonuibee.tistory.com/4)  
+  
 
-tar 명령어 사용법: https://moonuibee.tistory.com/4
+사실 저희 서비스는 제가 처음 맡을 때만 해도 MYISAM 테이블으로만 이루어져 있었습니다.  
+그래서 저는 지금 회사를 다니면서 InnoDB 엔진의 테이블을 저희 서비스에서 사용할만한 기회를 호시탐탐 노리고 있었죠.  
+
+기존에 있는 MYISAM 테이블을 InnoDB로 변경하자니...  
+
+> *캐릭터 정보 테이블 안에 버프 정보랑 장비 아이템 정보가 다 있는 건 좀...*  
+*테이블도 나누고 그 참에 InnoDB로 바꿔버리죠!!*
+
+> **아... 저희는 단일 스레드여서... 그렇게 바꾸면 한 번에 쿼리를 여러번 치게 될텐데... I/O가 많아져서 부담스러워요.**  
+
+> *엣...* 1  
+
+
+그렇다고 신규 테이블을 InnoDB로 넣자니,  
+
+> *이번에 신규로 들어가는 강화 시스템, 그거 InnoDB로 해보면 어떨까요? 그렇게 하면 붙는 강화 옵션 갯수에 제한을 두지 않아도 될 거 같은데!!*
+
+> **음... 좋네요. 아... 근데 저희는 단일 스레드 서버라서 그렇게 스키마를 구성하시면 강화 옵션을 변경할 때마다 옵션 갯수만큼 UPDATE를 쳐야되겠네요...**  
+**그건 좀 힘들 거 같은데요...**
+
+> *엣...* 2  
+
+위와 같은 사유로 InnoDB 엔진의 테이블을 적용하는 일은 번번히 실패로 돌아가곤 했습니다.  
+그러나 기회는 기다리는 자에게 오는 법 ! ! !  
+  
+
+> **이번에 신규로 들어가는 시스템. 기존 시스템으로는 어려울 거 같고 새로 테이블 빼야겠는데요.**  
+**이전처럼 슬롯 형식으로 하죠. 기획 쪽에서도 슬롯 형으로 할거니까 갯수 제한을...**
+
+> *엥? 아뇨. 아뇨. 이거 InnoDB로 하고 로그 형태로 남기죠??*
+
+> **네??**
+
+마침내 저한테 기회가 왔습니다. 새로 들어가는 테이블을 로그 형식으로 하고 기타등등 **뚝딱뚝딱** 해서 InnoDB로 변경했습니다.  
+기분 좋게 
+
+
+
+## MySQLHotcopy를 XtraBackup으로 바꿔보기 !!!
+ - [Purpose of Study](#purpose-of-study)
+ - [What is this?](#what-is-this)
+ - [Why Choose this?](#why-choose-this)
+ - [Let's Get Started](#lets-get-started)
+ - [Completion](#최종-결과)
+
+
+
+
+
+
+
+ ## What is this?
+ ## Why Choose this?
+ ## Let's Get Started
+ ## Completion
+
 
 
 
