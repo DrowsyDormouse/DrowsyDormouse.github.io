@@ -14,7 +14,7 @@ Xtrabackup에 대해 알아보고자 하였습니다.
  - tar 명령어 사용법: [https://moonuibee.tistory.com/4](https://moonuibee.tistory.com/4)  
   
 
-사실 저희 서비스는 제가 처음 맡을 때만 해도 MYISAM 테이블으로만 이루어져 있었습니다.  
+사실 저희 서비스는 제가 처음 맡을 때만 해도 모든 테이블이 MYISAM 엔진으로 이루어져 있었습니다.  
 그래서 저는 지금 회사를 다니면서 InnoDB 엔진의 테이블을 저희 서비스에서 사용할만한 기회를 호시탐탐 노리고 있었죠.  
 
 기존에 있는 MYISAM 테이블을 InnoDB로 변경하자니...  
@@ -48,7 +48,19 @@ Xtrabackup에 대해 알아보고자 하였습니다.
 > **네??**
 
 마침내 저한테 기회가 왔습니다. 새로 들어가는 테이블을 로그 형식으로 하고 기타등등 **뚝딱뚝딱** 해서 InnoDB로 변경했습니다.  
-기분 좋게 
+기분 좋게 InnoDB로 변경하고 다음 날, 청천벽력 같은 소리를 듣게 됩니다.
+
+> **세희님, 운영툴 로그가 안보여요.**
+
+> *엥???*
+
+왜 안보였을까요?  
+저희 운영툴은 BackUp DB 장비 내의 데이터를 기반으로 합니다.  
+또한 저희 BackUp 시스템은 MySQL의 기능 중에 mysqlhotcopy를 사용하여 진행됩니다.  
+그리고... mysqlhotcopy는 InnoDB의 백업 및 리스토어를 지원하지 않습니다... ㅠㅠ  
+
+자세히 알아보지 않고 진행한, 후폭풍을 맞게 된 것이죠...  
+급하게 SlaveDB의 테이블을 MYISAM 엔진으로 복구하고... 다른 Backup 시스템인 Xtrabackup을 적용해봅시다. 
 
 
 
@@ -60,15 +72,13 @@ Xtrabackup에 대해 알아보고자 하였습니다.
  - [Completion](#최종-결과)
 
 
+## What is this?
+사용하기 앞서서 Xtrabackup에 대해서 알아봅시다. 
+Xtra
 
-
-
-
-
- ## What is this?
- ## Why Choose this?
- ## Let's Get Started
- ## Completion
+## Why Choose this?
+## Let's Get Started
+## Completion
 
 
 
