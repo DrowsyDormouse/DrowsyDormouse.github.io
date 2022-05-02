@@ -73,11 +73,14 @@ Xtrabackup에 대해 알아보고자 하였습니다.
 
 
 ## What is this?
-사용하기 앞서서 Xtrabackup에 대해서 알아봅시다. 
-Xtra
+
 
 ## Why Choose this?
+
+
 ## Let's Get Started
+
+
 ## Completion
 
 
