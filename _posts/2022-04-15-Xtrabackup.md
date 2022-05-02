@@ -60,7 +60,7 @@ Xtrabackup에 대해 알아보고자 하였습니다.
 그리고... mysqlhotcopy는 InnoDB의 백업 및 리스토어를 지원하지 않습니다... ㅠㅠ  
 
 자세히 알아보지 않고 진행한, 후폭풍을 맞게 된 것이죠...  
-급하게 SlaveDB의 테이블을 MYISAM 엔진으로 복구하고... 다른 Backup 시스템인 Xtrabackup을 적용해봅시다. 
+급하게 SlaveDB의 테이블을 MYISAM 엔진으로 복구하고... 다른 Backup 시스템을 알아보았더니 mysqldump와 Xtrabackup에 대해서 알게 되었습니다. 
 
 
 
