@@ -12,7 +12,6 @@ MHA에 대해 학습해보고자 하였습니다.
 ## 우당탕쿵탕 MHA 학습기
  - [Purpose of Study](#purpose-of-study)
  - [What is this?](#what-is-this)
- - [Why Choose this?](#why-choose-this)
  - [Let's Get Started](#lets-get-started)
  - [Completion](#전부-적용이-된-모습)
 
@@ -44,11 +43,22 @@ MHA는 아래와 같이 여러 기능에 대해 지원하고 있습니다.
 이러한 일관성 문제를 방지하려면 새 Master 에서 복제를 시작하기 전에 손실된 바이너리 로그 이벤트를 식별 후, 각 Slave에 차례로 적용해야 합니다.  
 
   
-![](../asset/MHA/images/%EC%9E%A5%EC%95%A0%EC%8B%9C%EC%88%98%ED%96%89%EB%90%98%EB%8A%94FailOver%EC%A0%88%EC%B0%A8.png)  
+![장애시 수행되는 FailOver 절차](../asset/MHA/images/%EC%9E%A5%EC%95%A0%EC%8B%9C%EC%88%98%ED%96%89%EB%90%98%EB%8A%94FailOver%EC%A0%88%EC%B0%A8.png)  
 
+  1. MasterDB 장애 발생 후 MHA에서 감지
+  2. SlaveDB 중 가장 최신의 SlaveDB를 선택, MasterDB로 승격
+    승격 시 아래의 데이터를 참조
+    - show slave status와 각 SlaveDB의 relay log 확인
+    - relay log에서 end_log_pos 값 비교
+  3. SlaveDB 중 데이터 복제가 가장 느린 SlaveDB(A)에서 SAL 스레드가 relay log에 기록된 모든 이벤트를 실행, 이 과정이 끝날 때까지 다음 과정은 대기
+  4. SlaveDB(A)가 적용한 MasterDB의 로그 파일과 로그 포지션 정보를 Master로 승격된, 최신의 SlaveDB가 읽은 바이너리 로그 파일, 로그 포지션과 비교하여 차이가 발생하는 부분의 트랜잭션을 Slave(A)에 반영
+  5. 마지막으로 Master로 승격된, 최신의 SlaveDB는 반영된 바이너리 로그 포지션 이후부터 장애가 발생한 Master DB의 바이너리 로그 포지션 차이를 적용
+  6. 모든 슬레이브 DB는 장애시점의 Master DB 데이터까지는 복구가 완료
 
 
 ## Let's Get Started
+위에서 길게 적었는데 머리에 각인되려면 한 번 해보는 게 제일입니다. 
+
 1. 환경 구축하기<br/>
  i. AWS 인스턴스 생성<br/>
 

@@ -73,6 +73,11 @@ Xtrabackup에 대해 알아보고자 하였습니다.
 
 
 ## What is this?
+ - [mysqldump](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html)
+ - 
+mysqldump: 
+
+Xtrabackup
 
 
 ## Why Choose this?
