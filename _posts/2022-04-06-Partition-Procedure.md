@@ -110,12 +110,6 @@ CREATE TABLE sample_log{
 };
 ````
 
-
-```javascript
-/* Some pointless Javascript */
-var rawr = ["r", "a", "w", "r"];
-```
-
 임시 데이터를 넣어봅시다. 저는 아래와 같이 넣었습니다.  
 
 <br/>
