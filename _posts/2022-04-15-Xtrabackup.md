@@ -74,10 +74,10 @@ Xtrabackup에 대해 알아보고자 하였습니다.
 
 ## What is this?
  - [mysqldump](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html)
- - 
-mysqldump: 이고르 로마넨코(Igor Romaneko)가 작성한 백업 프로그램.  
+ - [XtraBackup](https://www.percona.com/software/mysql-database/percona-xtrabackup)
+mysqldump: 이고르 로마넨코(Igor Romaneko)가 작성한 백업 프로그램. MySQL 설치 시, 함께 번들로 설치됨. 테이블 생성, 데이터 쿼리, 등에 대한 SQL 생성문을 백업. sql 파일로 백업됨. 
 
-Xtrabackup
+Xtrabackup: Percona에서 개발된 오픈소스 백업 툴, 엔진 데이터를 그대로 복사하는 물리적 백업 방식. 풀백업, 증분백업, 암호화 백업, 압축백업 지원.  
 
 
 ## Why Choose this?
@@ -150,5 +150,3 @@ inno엔진이어도.
 살릴 수 없습니다..  
 mysqldump 또는 XtraBackup을 이용하여 정상적인 방식을 통해 restore 하는 과정이 필요함.  
 
-
-차후 다시 연구... 
