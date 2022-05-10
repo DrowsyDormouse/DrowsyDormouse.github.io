@@ -86,10 +86,7 @@ mysqldump의 경우, master-data 옵션 사용 시, backup 시점의 binary even
 
 
 
-## Let's Get Started
-
-
-## Completion
+## Let's Get Started  
 
 내부 망에 설치해야 하므로 소스 설치 방법 채용
 
@@ -137,6 +134,8 @@ chown -R mysql:mysql data
 
 복구도 별다른 문제는 없이 되었음. 
 
+
+## Completion
 직접 테스트 해본 결과
 실 서비스에 적용하기 어려운 점이 발견됨. 
  - restore 하는 동안, Slave DB의 서비스를 종료해야 함. 
