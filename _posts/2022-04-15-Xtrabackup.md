@@ -75,33 +75,21 @@ Xtrabackup에 대해 알아보고자 하였습니다.
 ## What is this?
  - [mysqldump](https://dev.mysql.com/doc/refman/8.0/en/mysqldump.html)
  - [XtraBackup](https://www.percona.com/software/mysql-database/percona-xtrabackup)
-mysqldump: 이고르 로마넨코(Igor Romaneko)가 작성한 백업 프로그램. MySQL 설치 시, 함께 번들로 설치됨. 테이블 생성, 데이터 쿼리, 등에 대한 SQL 생성문을 백업. sql 파일로 백업됨. 
+mysqldump: 이고르 로마넨코(Igor Romaneko)가 작성한 백업 프로그램. MySQL 설치 시, 함께 번들로 설치됨. 테이블 생성, 데이터 쿼리, 등에 대한 SQL 생성문을 백업(논리적 백업). sql 파일로 백업됨. 
 
 Xtrabackup: Percona에서 개발된 오픈소스 백업 툴, 엔진 데이터를 그대로 복사하는 물리적 백업 방식. 풀백업, 증분백업, 암호화 백업, 압축백업 지원.  
 
 
 ## Why Choose this?
+mysqldump의 경우, master-data 옵션 사용 시, backup 시점의 binary event의 position 기록을 위해 global lock 또는 table lock을 획득하고 백업이 종료될 때까지 해제되지 않습니다. single-transaction 옵션을 같이 사용할 경우, binlog position 추출한 뒤, repeatable read 설정 후, start transation 후 lock을 해제할 수 있습니다. 이 과정은 매우 빠르게 진행되지만 global lock을 갖고 있는 동안에는 ddl이 실패할 수 있습니다. 또한 global lock을 획득할 때도 장시간 실행중인 transaction이 있으면 계속 대기하게 됩니다. 
+추가로 저희 서비스에서는 MYISAM과 Inno를 함께 사용하는데 이 경우, mysqldump를 두번 실행하여 MYISAM 테이블 백업 후, Inno 테이블 백업해야 합니다. (순서는 반대여도 괜찮으나, **두 번 실행** 인 점이 중요)
+
 
 
 ## Let's Get Started
 
 
 ## Completion
-
-
-
-
-
-
-설치 사유: 
-
-1. innoDB 스토리지 엔진을 사용하는 테이블은 mysqlhotcopy로 백업이 되지 않음.
-
-2. mysqldump를 사용할 경우, innoDB 테이블 백업 작업과 myisam 테이블 백업 작업을 따로 해야함.
-
-3. 내 개인적인 공부 욕
-
-
 
 내부 망에 설치해야 하므로 소스 설치 방법 채용
 
@@ -117,36 +105,49 @@ percona-xtrabackup-2.4.24-Linux-x86_64.glibc2.12.tar.gz
 
 업로드 후에 /usr/local/src 에 압축 해제해서 넣기.. 
 
+```
 tar -zxvf percona-xtrabackup-2.4.24-Linux-x86_64.glibc2.12.tar.gz -C /usr/local/src
+```
+
+xtrabackup의 타겟 디렉토리 지정  
+
+```
+[xtrabackup]
+target_dir = /usr/local/mysql55/data/
+```
+
+dev 장비의 DB 재시작
+
+별도의 백업 테스트 유저 생성
 
 
+백업 시,
+```
+./xtrabackup --defaults-file=/etc/my.cnf --user=유저 --host=localhost --port=3306 --password=패스워드 --socket=/usr/local/mysql55/tmp/mysql.sock --databases=백업DB --backup --target-dir=/usr/local/mysql55/tmep_backup
+```
+  
+실행 결과, 개발 서버의 저장소 하나 백업하는데에 1분 33초 정도 걸림.  
+또한 MYISAM 테이블과 Inno 테이블 모두 한 번에 문제 없이 백업되었음.  
 
-글에서는 컴파일할 때, cmake를 사용했으나 우리 장비에는 그런거 없.. 이라서 다른 방법을 추구함. 
+복구 시,
+```
+./xtrabackup --copy-back --target-dir=/usr/local/mysql55/tmep_backup
+chown -R mysql:mysql data
+```
 
-gcc와 make를 사용,
+복구도 별다른 문제는 없이 되었음. 
 
-gcc -v -I/usr/local/src/percona-xtrabackup-2.4.24/include -DDEBUG -Wall -W -O2 -L/usr/local/src/percona-xtrabackup-2.4.24/lib -o percona-xtrabackup main.c -lm
-
-
-글쓴이가 글을 헷갈리게 적어뒀음
-
-해당 링크에서 다운 받는 것도 소스 코드가 아님
-
-걍 아래로 
-
-
-
-dev 장비의 DB 재시작이 필요로 해보임 
+직접 테스트 해본 결과
+실 서비스에 적용하기 어려운 점이 발견됨. 
+ - restore 하는 동안, Slave DB의 서비스를 종료해야 함. 
+ - 현재 운영툴은 매 시 정각마다 백업한 데이터저장소를 기반으로 작동하고 있음. 그러나 Xtrabackup을 사용하여 restore할 경우, 기본으로 원본 저장소에 데이터가 복원됨.  
 
 
-
-아~ 멈춰!!!
-
-mysqlhotcopy 사용 시, ibd 파일로 저장되고 있긴함.
-
-inno엔진이어도. 
-
-~~그럼 얘네를 살리는 방안으로 가는 게 더 나을 거 같아서 일단 멈춤. ~~  
-살릴 수 없습니다..  
-mysqldump 또는 XtraBackup을 이용하여 정상적인 방식을 통해 restore 하는 과정이 필요함.  
-
+위와 같은 문제를 해결하기 전까지는 실적용은 어려울 것으로 보임. 
+따라서, 일단은 Slave DB에서만 해당 테이블을 MYISAM으로 변경,
+점검 작업 시에 slave reset 할 때, 해당 테이블들을 MYISAM으로 변경하도록 쉘 스크립트를 생성함.  
+  
+<br/>
+  
+결론: 잘 알아보고 바꾸자!!!!!!!! ㅠㅠㅠㅠ  
+~~개인 공부해서 다행인가...~~
