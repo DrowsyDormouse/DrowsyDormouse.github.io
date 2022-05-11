@@ -1,0 +1,11 @@
+---
+layout: post
+title: 자주 쓰는 my.conf 설정 공부
+comments: true
+categories: [MySQL]
+tag: [MySQL]
+---
+
+innodb_flush_log_at_trx_commit 
+innodb_flush_method 
+sync_binlog 
