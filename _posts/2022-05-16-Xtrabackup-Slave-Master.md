@@ -30,6 +30,8 @@ Backup 된 데이터저장소가 전부 비어 있고 그마저도 2시간마다
 
 **MySQL error 1236, master의 postion을 못찾겠어용~~**  
 
+![](../images/%EB%95%80%ED%9D%98%EB%A6%AC%EB%8A%94%EB%86%8D%EB%8B%B4%EA%B3%B0.jpg)
+
 > 엥???  
 
 이 error가 Backup 시스템이랑 관련이 있진 않을텐데...???  
@@ -50,8 +52,9 @@ Slave는.. 2번째 bin 로그를 보고 있었는데 말이죠...
 >그렇지만... 이게 옳은걸까? 이미 하루 이상 데이터가 깨져있었는데...?  
 어차피.. 임검 각인데...(서버 다운 이슈로 인해서 임검이 필요한 상황이었음)  
 걍... 임검하는 김에 Master를 풀백업 떠서 Slave로 옮기자!!!  
-
 ~~Live 서버에서 Xtrabackup을 사용해볼 기회가 이렇게 찾아올 줄은 몰랐는데요...~~  
+
+![](../images/%EB%82%98%EB%8A%94%ED%95%A0%EC%88%98%EC%9E%88%EB%8B%A4%EB%86%8D%EB%8B%B4%EA%B3%B0.jpg)  
 
 일단 급하게 개발 서버에 설치되어있는 Xtrabackup을 그대로 지사 라이브 서버 장비에 옮겼습니다.  
 그리고 Master 장비에서 익숙하게 게임 DB 저장소를 풀백업 떠줍니다.  
@@ -72,6 +75,8 @@ Xtrabackup은 Restore 시에 Data 폴더가 비워져 있어야하는데요.
 
 ![중국어 못해요](../images/cp_error_LI.jpg)  
 ![이럴줄 알았으면 제2외국어를 중국어로 할걸..](../images/cp_error2_LI.jpg)  
+
+![](../images/%EB%88%88%EB%AC%BC%ED%9D%98%EB%A6%AC%EB%8A%94%EB%86%8D%EB%8B%B4%EA%B3%B0-joke-bear.gif)  
 
 정신이 나가버리는 줄 알았습니다..  
 copy는 안되고 내용물을 그렇다고 지워버릴수도 없고  
