@@ -59,9 +59,9 @@ Slave는.. 2번째 bin 로그를 보고 있었는데 말이죠...
 일단 급하게 개발 서버에 설치되어있는 Xtrabackup을 그대로 지사 라이브 서버 장비에 옮겼습니다.  
 그리고 Master 장비에서 익숙하게 게임 DB 저장소를 풀백업 떠줍니다.  
 
-"""
+```shell
 shell> xtrabackup --defaults-file=/etc/my.conf --user=유저 --host=localhost --port=포트번호 --password=패스워드 --socket=mysql저장위치/tmp/mysqld.sock --backup --target-dir=백업저장위치
-"""
+```
 
 그 후에 현지 SE분께 말씀드려서 백업 뜬 저장 파일을 Slave 장비로 옮깁니다.  
 Xtrabackup은 Restore 시에 Data 폴더가 비워져 있어야하는데요. 
@@ -83,16 +83,16 @@ copy는 안되고 내용물을 그렇다고 지워버릴수도 없고
 혼자 고군분투 하다가 시간이 오래걸리더라도 일단 tar로 압축하자 싶어서 압축 후 원본 폴더를 지워버렸습니다.  
 새로이 Data 폴더를 생성해주고 Restore 해주기로 합니다.  
 
-"""
+```shell
 shell> xtrabackup --copy-back --target-dir=/usr/local/mysql55/tmep_backup
-"""
+```
 
 그리고... 안됩니다.  
 왜...??? 개발서버에서는 잘 됐는데??  
 
-"""
+```shell
 Error: datadir must be specified.
-"""
+```
 
 Datadir 관련해서 에러가 떴었는데요.  
 개발 서버에서는 문제가 없었지만(당연, 같은 곳에서 백업하고 복원시켰음)  
@@ -100,11 +100,9 @@ Datadir 관련해서 에러가 떴었는데요.
 data 폴더에 복원 시켜야하는데 해당 폴더의 위치를 못찾는거죠.  
 [관련 참고글](https://bstar36.tistory.com/342)  
 
-~~그리고 개발서버에서는 할때 my.conf 설정 파일에 datadir 설정을 해줬었으뮤ㅠ~~  
-
-"""
+```shell
 shell> xtrabackup --datadir=Slave 내의 data폴더 위치 --copy-back --target-dir=백업저장위치
-"""
+```
 
 이제 무사히 복원이 되는 것을 확인하고 tar 로 압축한 old 데이터의 압축을 풉니다.  
 그리고 다시... copy를 해서 문제없는 데이터 저장소들을 살려야했는데요...  
